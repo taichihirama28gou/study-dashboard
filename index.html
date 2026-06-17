@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>期末テスト 学習計画ダッシュボード</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f4f0;
+    --text: #1a1a1a;
+    --text2: #6b6a66;
+    --border: #e3e1d8;
+    --accent-bg: #e6f1fb;
+    --accent-text: #0c447c;
+    --accent-text2: #185fa5;
+    --warn-bg: #faeeda;
+    --warn-text: #854f0b;
+    --done-bg: #f1efe8;
+    --done-text: #888780;
+    --red-bg: #fcebeb;
+    --red-text: #a32d2d;
+    --green-bg: #eaf3de;
+    --green-text: #3b6d11;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #2c2c2a;
+      --text: #f1efe8;
+      --text2: #b4b2a9;
+      --border: #444441;
+      --accent-bg: #0c447c;
+      --accent-text: #e6f1fb;
+      --accent-text2: #b5d4f4;
+      --warn-bg: #633806;
+      --warn-text: #fac775;
+      --done-bg: #2c2c2a;
+      --done-text: #888780;
+      --red-bg: #501313;
+      --red-text: #f7c1c1;
+      --green-bg: #27500a;
+      --green-text: #c0dd97;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+    background: var(--bg2);
+    color: var(--text);
+    margin: 0;
+    padding: 1rem;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { color: var(--text2); font-size: 13px; margin: 0 0 1.25rem; }
+  .card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .stat {
+    background: var(--bg2);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+  }
+  .stat.accent { background: var(--accent-bg); color: var(--accent-text); }
+  .stat .label { font-size: 12px; color: var(--text2); margin: 0 0 2px; }
+  .stat.accent .label { color: var(--accent-text2); }
+  .stat .value { font-size: 18px; font-weight: 600; margin: 0; }
+  h2 {
+    font-size: 14px; font-weight: 600; margin: 1.5rem 0 0.5rem;
+    color: var(--text2); text-transform: none;
+  }
+  .exam-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0.6rem 0; border-bottom: 0.5px solid var(--border);
+  }
+  .exam-row:last-child { border-bottom: none; }
+  .exam-row.done { opacity: 0.45; }
+  .exam-date {
+    min-width: 60px; text-align: center; border-radius: 8px;
+    padding: 4px 0; font-size: 12px; background: var(--bg2); flex-shrink: 0;
+  }
+  .exam-date.next { background: var(--red-bg); color: var(--red-text); font-weight: 600; }
+  .exam-date .time { font-size: 12px; font-weight: 600; display: block; }
+  .exam-name { font-weight: 600; font-size: 14px; margin: 0; }
+  .exam-meta { font-size: 12px; color: var(--text2); margin: 2px 0 0; }
+  details {
+    background: var(--bg); border: 0.5px solid var(--border);
+    border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+  }
+  details[open] { border-color: var(--accent-text2); }
+  summary {
+    cursor: pointer; font-weight: 600; font-size: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+    background: var(--accent-bg); color: var(--accent-text);
+  }
+  .phase-range { font-size: 12px; color: var(--text2); font-weight: 400; margin-left: auto; }
+  .day-row {
+    display: flex; gap: 10px; padding: 0.5rem 0; border-top: 0.5px solid var(--border);
+    font-size: 13px;
+  }
+  .day-row:first-of-type { border-top: none; margin-top: 0.5rem; }
+  .day-row.today { background: var(--accent-bg); border-radius: 8px; padding: 0.5rem 0.5rem; margin: 0.25rem -0.25rem; }
+  .day-label { min-width: 52px; flex-shrink: 0; font-weight: 600; color: var(--text2); }
+  .day-row.today .day-label { color: var(--accent-text); }
+  .day-row .day-content { flex: 1; }
+  .day-row .day-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .status-badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; flex-shrink: 0;
+  }
+  .status-badge.done { background: var(--green-bg); color: var(--green-text); }
+  .status-badge.partial { background: var(--warn-bg); color: var(--warn-text); }
+  .status-badge.skip { background: var(--done-bg); color: var(--done-text); }
+  .progress-note { font-size: 12px; color: var(--accent-text2); margin-top: 4px; }
+  ul.bullets { margin: 0.5rem 0 0; padding-left: 1.2rem; font-size: 13px; }
+  ul.bullets li { margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0.5rem; }
+  th, td { border: 0.5px solid var(--border); padding: 4px 6px; text-align: left; }
+  th { background: var(--bg2); font-weight: 600; }
+  .note { font-size: 13px; color: var(--text2); margin: 0.4rem 0; }
+  .footer { font-size: 11px; color: var(--text2); text-align: center; margin-top: 1.5rem; }
+  .danger-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;flex-shrink:0}
+  .danger-badge.safe{background:var(--green-bg);color:var(--green-text)}
+  .danger-badge.caution{background:var(--warn-bg);color:var(--warn-text)}
+  .danger-badge.danger{background:var(--red-bg);color:var(--red-text)}
+  .danger-badge.critical{background:#8b1a1a;color:#fff}
+  .prog-wrap{background:var(--bg2);border-radius:4px;height:5px;margin-top:5px;overflow:hidden}
+  .prog-fill{height:5px;border-radius:4px}
+  .prog-fill.good{background:var(--green-text)}
+  .prog-fill.warn{background:var(--warn-text)}
+  .prog-fill.bad{background:var(--red-text)}
+  .form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .form-group{display:flex;flex-direction:column;gap:3px}
+  .form-label{font-size:11px;color:var(--text2)}
+  .form-input{font-size:13px;padding:5px 9px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:inherit}
+  .form-input:focus{outline:none;border-color:var(--accent-text2)}
+  .form-btn{font-size:13px;font-weight:600;padding:6px 16px;border-radius:8px;border:none;background:var(--accent-bg);color:var(--accent-text);cursor:pointer}
+  .form-btn:hover{background:var(--accent-text2);color:#fff}
+  .del-btn{font-size:11px;padding:1px 7px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer}
+  .del-btn:hover{background:var(--red-bg);color:var(--red-text);border-color:var(--red-text)}
+
+  /* ── Note viewer modal ── */
+  .modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto}
+  .modal-overlay.open{display:flex}
+  .modal-box{background:var(--bg);border:.5px solid var(--border);border-radius:16px;width:100%;max-width:720px;display:flex;flex-direction:column;margin-top:1.5rem;max-height:calc(100vh - 3rem)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.1rem .625rem;border-bottom:.5px solid var(--border);flex-shrink:0}
+  .modal-title{font-size:15px;font-weight:600;margin:0}
+  .modal-close{background:var(--bg2);border:.5px solid var(--border);border-radius:8px;padding:3px 10px;cursor:pointer;font-size:13px;color:var(--text);line-height:1.4}
+  .modal-tabs{display:flex;gap:4px;padding:.5rem 1.1rem;border-bottom:.5px solid var(--border);flex-shrink:0}
+  .modal-tab{font-size:12px;font-weight:600;padding:3px 12px;border-radius:6px;border:.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer}
+  .modal-tab.active{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-text2)}
+  .modal-body{overflow-y:auto;padding:.875rem 1.1rem 1.5rem;flex:1;font-size:13px;line-height:1.75}
+  .note-btn{font-size:11px;padding:2px 9px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-weight:600;flex-shrink:0;white-space:nowrap}
+  .note-btn:hover{background:var(--accent-bg);color:var(--accent-text);border-color:var(--accent-text2)}
+  .md h1{font-size:17px;font-weight:700;margin:1rem 0 .5rem;padding-bottom:.25rem;border-bottom:.5px solid var(--border)}
+  .md h2{font-size:15px;font-weight:600;margin:1.25rem 0 .4rem;color:var(--accent-text)}
+  .md h3{font-size:13px;font-weight:600;margin:.9rem 0 .25rem}
+  .md h4{font-size:13px;font-weight:600;margin:.75rem 0 .2rem;color:var(--text2)}
+  .md p{margin:.4rem 0}
+  .md ul,.md ol{margin:.4rem 0;padding-left:1.3rem}
+  .md li{margin:.2rem 0}
+  .md code{font-family:ui-monospace,monospace;background:var(--bg2);padding:1px 5px;border-radius:4px;font-size:12px}
+  .md pre{background:var(--bg2);border-radius:8px;padding:.625rem .875rem;overflow-x:auto;margin:.5rem 0}
+  .md pre code{background:none;padding:0;font-size:12px}
+  .md table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:12px}
+  .md th,.md td{border:.5px solid var(--border);padding:4px 7px}
+  .md th{background:var(--bg2);font-weight:600}
+  .md hr{border:none;border-top:.5px solid var(--border);margin:.875rem 0}
+  .md strong{font-weight:600}
+  .md blockquote{border-left:3px solid var(--accent-text2);margin:.5rem 0;padding:.25rem .75rem;color:var(--text2);font-style:italic}
+  .katex-display{overflow-x:auto;overflow-y:hidden}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="wrap">
+  <h1>期末テスト 学習計画ダッシュボード</h1>
+  <p class="subtitle">作成日: 2026/06/15 ／ ローリング集中方式</p>
+
+  <!-- id付きのdivはJSが内容を生成します。直下のnoscriptは、iPadのFilesアプリ
+       プレビュー(Quick Look)などJSが動かない環境向けの2026/06/15時点のスナップショットです。
+       phases/exams/progressのデータを更新した際は、このnoscript内のスナップショットも
+       手動で合わせて更新してください。 -->
+  <div class="stat-grid" id="statGrid"></div>
+  <noscript>
+  <div class="stat-grid">
+    <div class="stat">
+      <p class="label">今日の日付</p>
+      <p class="value">06/15</p>
+    </div>
+    <div class="stat accent">
+      <p class="label">現在のフェーズ</p>
+      <p class="value">フェーズ1</p>
+    </div>
+    <div class="stat">
+      <p class="label">次の試験まで</p>
+      <p class="value">29日（電子回路Ⅱ）</p>
+    </div>
+    <div class="stat">
+      <p class="label">進捗記録</p>
+      <p class="value">0日分</p>
+    </div>
+  </div>
+  </noscript>
+
+  <div class="card" id="todayCard"></div>
+  <noscript>
+  <div class="card">
+    <p style="margin:0 0 4px; font-size:12px; color:var(--text2);">今日の重点（フェーズ1）</p>
+    <p style="font-weight:600; font-size:16px; margin:0;">電子回路Ⅱ</p>
+    <p class="note" style="margin-top:4px;">終日空き／ノート全体を1周し全体像を掴む</p>
+  </div>
+  </noscript>
+
+  <h2>スケジュール調整</h2>
+  <div class="card" id="catchupCard"></div>
+
+  <h2>進捗を記録</h2>
+  <div class="card" id="progressFormCard"></div>
+
+  <h2>進捗履歴</h2>
+  <div class="card" id="progressHistory"></div>
+  <noscript>
+  <div class="card">
+    <p class="note" style="margin:0;">まだ記録がありません。今日の進捗をチャットで報告すると、ここに表示されます。</p>
+  </div>
+  </noscript>
+
+  <h2>フェーズ別計画</h2>
+  <div id="phases"></div>
+  <noscript>
+  <details open>
+    <summary>
+      <span class="badge">現在</span>
+      フェーズ1: 基礎固め①
+      <span class="phase-range">06/15〜06/21</span>
+    </summary>
+    <div class="day-row today">
+      <div class="day-label">6/15 月</div>
+      <div class="day-content">
+        <div class="day-head"><strong>電子回路Ⅱ</strong></div>
+        <span style="color:var(--text2)">終日空き／ノート全体を1周し全体像を掴む</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">6/16 火</div>
+      <div class="day-content">
+        <div class="day-head"><strong>音響工学</strong></div>
+        <span style="color:var(--text2)">朝(〜10:50)＋15:00以降／第1回から式変形を復習開始（苦手分野）</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">6/17 水</div>
+      <div class="day-content">
+        <div class="day-head"><strong>制御の基礎</strong></div>
+        <span style="color:var(--text2)">12:30〜17:00（バイト17-23）／ノートを軽く読み返し、Laplace・伝達関数の用語確認</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">6/18 木</div>
+      <div class="day-content">
+        <div class="day-head"><strong>音響工学＋電子回路Ⅱ</strong></div>
+        <span style="color:var(--text2)">朝(〜10:50)＋17:00以降／バイトなし。音響工学の式変形を継続し、余力で電子回路Ⅱの通読を進める</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">6/19 金</div>
+      <div class="day-content">
+        <div class="day-head"><strong>学習ほぼなし</strong></div>
+        <span style="color:var(--text2)">バイト17-23のため学習時間はほぼ無し前提</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">6/20 土</div>
+      <div class="day-content">
+        <div class="day-head"><strong>音響工学（メイン）</strong></div>
+        <span style="color:var(--text2)">終日空き／土曜にやや多めに式変形・導出練習を配置</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">6/21 日</div>
+      <div class="day-content">
+        <div class="day-head"><strong>電子回路Ⅱ＋音響工学（復習）</strong></div>
+        <span style="color:var(--text2)">15:00以降（バイト9-15）／電子回路Ⅱのノート通読を仕上げ、音響工学の今週の内容を軽く復習</span>
+      </div>
+    </div>
+    <ul class="bullets">
+      <li>音響工学: 第1回から順に、波動方程式・複素数によるインピーダンス・dB計算の式変形を復習。「導出を自分の手で再現できるか」を確認しながら進める。</li>
+      <li>電子回路Ⅱ: 試験が最も早いので、ノート全体を1周して全体像を掴む。</li>
+      <li>制御の基礎: ノートを軽く読み返す程度（Laplace/伝達関数の用語確認）。</li>
+      <li>電子デバイス・電気機器Ⅱ・オプトロニクスはまだ着手しなくてOK。</li>
+    </ul>
+  </details>
+  <details>
+    <summary>
+      フェーズ2: 基礎固め②
+      <span class="phase-range">06/22〜06/28</span>
+    </summary>
+    <ul class="bullets">
+      <li>音響工学: 苦手分野の式変形を中心に継続。問題集の該当範囲を1〜2問解く。</li>
+      <li>電子回路Ⅱ: 問題集を使った演習を開始。</li>
+      <li>制御の基礎: 本格的に演習開始（Routh-Hurwitz、伝達関数の問題演習）。</li>
+      <li>電子デバイス・電気機器Ⅱ・オプトロニクス: それぞれ週1回、ノートを通読してテスト範囲の全体像を確認（各1〜1.5時間）。</li>
+      <li>バイト注意: 6/22(月)9-15 → 月曜は午後(15時以降)から電子回路Ⅱを開始。</li>
+    </ul>
+  </details>
+  <details>
+    <summary>
+      フェーズ3: 演習強化期間
+      <span class="phase-range">06/29〜07/05</span>
+    </summary>
+    <ul class="bullets">
+      <li>電子回路Ⅱ: 試験まで2週間。問題集を中心に仕上げに入る。</li>
+      <li>音響工学: 苦手分野の演習を継続（このフェーズでも最重点を維持）。</li>
+      <li>制御の基礎: 問題演習を継続。</li>
+      <li>電子デバイス・電気機器Ⅱ・オプトロニクス: 各科目週2回のセッションを確保し、ノートの内容を問題集レベルまで定着させる。</li>
+      <li>バイト注意: 6/29(月)11-15, 7/1(水)17-21:30, 7/3(金)17-22:30 → 月曜は午前(〜11時)に短時間だけ電子回路Ⅱ。水・金は学習時間が減るので火・土・日に振り替え。</li>
+    </ul>
+  </details>
+  <details>
+    <summary>
+      フェーズ4: 直前準備期間
+      <span class="phase-range">07/06〜07/12</span>
+    </summary>
+    <ul class="bullets">
+      <li>電子回路Ⅱ: 最終仕上げ（試験は7/14）。問題集を解き直し、苦手な計算を洗い出す。</li>
+      <li>音響工学: 電子回路Ⅱに次ぐ優先度で最終仕上げの準備（試験は7/17）。</li>
+      <li>制御の基礎: 演習継続、苦手分野の洗い出し。</li>
+      <li>電子デバイス・電気機器Ⅱ・オプトロニクス: 維持（週1〜2回）。</li>
+      <li>バイト注意: 7/6(月)9-15, 7/10(金)17-22:30 → 直前期で最も学習時間が必要な週。月曜午後・火〜木・土日にしっかり時間を確保し、電子回路Ⅱ・音響工学の最終仕上げに充てる。</li>
+    </ul>
+  </details>
+  <details>
+    <summary>
+      フェーズ5: 試験第1週
+      <span class="phase-range">07/13〜07/17</span>
+    </summary>
+    <div class="day-row">
+      <div class="day-label">7/13 月</div>
+      <div class="day-content">
+        <div class="day-head"><strong>電子回路Ⅱ最終確認</strong></div>
+        <span style="color:var(--text2)">バイトなし、終日空き／問題集を通しで</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/14 火</div>
+      <div class="day-content">
+        <div class="day-head"><strong>電子回路Ⅱ試験 → 音響工学</strong></div>
+        <span style="color:var(--text2)">10:50-12:30試験。試験後（15:00〜）から音響工学に切替</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/15 水</div>
+      <div class="day-content">
+        <div class="day-head"><strong>音響工学集中</strong></div>
+        <span style="color:var(--text2)">12:30以降空き</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/16 木</div>
+      <div class="day-content">
+        <div class="day-head"><strong>音響工学集中</strong></div>
+        <span style="color:var(--text2)">朝+17:00以降空き／苦手分野の総点検</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/17 金</div>
+      <div class="day-content">
+        <div class="day-head"><strong>音響工学試験 → 制御の基礎</strong></div>
+        <span style="color:var(--text2)">10:50-12:30試験。試験後（17:00〜）から制御の基礎へ切替</span>
+      </div>
+    </div>
+    <ul class="bullets">
+      <li>7/13(月): 電子回路Ⅱ最終確認に1日を集中投下。</li>
+      <li>7/14(火): 午前に電子回路Ⅱ試験 → 試験後は即座に音響工学へ全力シフト。</li>
+      <li>7/15(水)〜7/16(木): 音響工学に集中（苦手な式変形を試験形式で再確認）。</li>
+      <li>7/17(金): 午前に音響工学試験 → 試験後は制御の基礎へシフト。</li>
+    </ul>
+  </details>
+  <details>
+    <summary>
+      フェーズ6: 試験第2週
+      <span class="phase-range">07/18〜07/24</span>
+    </summary>
+    <div class="day-row">
+      <div class="day-label">7/18 土</div>
+      <div class="day-content">
+        <div class="day-head"><strong>制御の基礎集中</strong></div>
+        <span style="color:var(--text2)">終日空き</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/19 日</div>
+      <div class="day-content">
+        <div class="day-head"><strong>制御の基礎集中＋英語特殊A対策開始</strong></div>
+        <span style="color:var(--text2)">終日空き／英語特殊Aは内容が軽いため毎日短時間でOK（試験予想日7/22の3日前）</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/20 月</div>
+      <div class="day-content">
+        <div class="day-head"><strong>制御の基礎最終確認＋英語特殊A継続</strong></div>
+        <span style="color:var(--text2)">終日空き（バイト予定なし）</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/21 火</div>
+      <div class="day-content">
+        <div class="day-head"><strong>制御の基礎試験 → 英語特殊A最終確認</strong></div>
+        <span style="color:var(--text2)">13:20-15:00試験。試験後（15:00〜）は翌日試験想定の英語特殊Aを優先</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/22 水</div>
+      <div class="day-content">
+        <div class="day-head"><strong>英語特殊A試験（未確定）→ 電子デバイス・電気機器Ⅱ</strong></div>
+        <span style="color:var(--text2)">英語特殊A試験後、電子デバイス・電気機器Ⅱを集中対策</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/23 木</div>
+      <div class="day-content">
+        <div class="day-head"><strong>電子デバイス試験・電気機器Ⅱ試験 → オプトロニクス</strong></div>
+        <span style="color:var(--text2)">10:50-12:30、13:20-15:00試験。試験後（15:10〜）からオプトロニクスへ全振り</span>
+      </div>
+    </div>
+    <div class="day-row">
+      <div class="day-label">7/24 金</div>
+      <div class="day-content">
+        <div class="day-head"><strong>オプトロニクス試験</strong></div>
+        <span style="color:var(--text2)">09:00-10:40試験。前日夜〜当日朝まで最終確認</span>
+      </div>
+    </div>
+    <ul class="bullets">
+      <li>7/18(土): 制御の基礎に集中。</li>
+      <li>7/19(日)〜7/20(月): 制御の基礎を継続しつつ、英語特殊Aの対策を開始（内容が軽いため3日前から毎日短時間でOK）。</li>
+      <li>7/21(火): 午後に制御の基礎試験 → 試験後は英語特殊Aの最終確認を優先（翌日7/22に試験がある想定）。</li>
+      <li>7/22(水): 英語特殊Aの試験（未確定）→ 試験後は電子デバイス・電気機器Ⅱを集中対策。</li>
+      <li>7/23(木): 午前に電子デバイス試験、午後に電気機器Ⅱ試験 → 両試験終了後、夜から翌朝までオプトロニクスへ全振り。</li>
+      <li>7/24(金): 朝にオプトロニクス試験 → 終了。</li>
+    </ul>
+  </details>
+  </noscript>
+
+  <h2>試験日程</h2>
+  <div class="card" id="examCard"></div>
+  <noscript>
+  <div class="card">
+    <div class="exam-row">
+      <div class="exam-date next">
+        07/14 火
+        <span class="time">10:50</span>
+      </div>
+      <div>
+        <p class="exam-name">電子回路Ⅱ</p>
+        <p class="exam-meta">配分 18% ・ 最優先①（最も早い試験）</p>
+      </div>
+    </div>
+    <div class="exam-row">
+      <div class="exam-date">
+        07/17 金
+        <span class="time">10:50</span>
+      </div>
+      <div>
+        <p class="exam-name">音響工学</p>
+        <p class="exam-meta">配分 25%（最重点） ・ 最優先②（最も重い科目）</p>
+      </div>
+    </div>
+    <div class="exam-row">
+      <div class="exam-date">
+        07/21 火
+        <span class="time">13:20</span>
+      </div>
+      <div>
+        <p class="exam-name">制御の基礎</p>
+        <p class="exam-meta">配分 15% ・ 優先③</p>
+      </div>
+    </div>
+    <div class="exam-row">
+      <div class="exam-date">
+        07/22 水
+        <span class="time">未確定</span>
+      </div>
+      <div>
+        <p class="exam-name">英語特殊A<span class="status-badge partial" style="margin-left:8px;">未確定</span></p>
+        <p class="exam-meta">配分 対象外 ・ 日程未確定（おそらく7/22）</p>
+      </div>
+    </div>
+    <div class="exam-row">
+      <div class="exam-date">
+        07/23 木
+        <span class="time">10:50</span>
+      </div>
+      <div>
+        <p class="exam-name">電子デバイス</p>
+        <p class="exam-meta">配分 15% ・ 優先④（同日2科目）</p>
+      </div>
+    </div>
+    <div class="exam-row">
+      <div class="exam-date">
+        07/23 木
+        <span class="time">13:20</span>
+      </div>
+      <div>
+        <p class="exam-name">電気機器Ⅱ</p>
+        <p class="exam-meta">配分 15% ・ 優先④（同日2科目）</p>
+      </div>
+    </div>
+    <div class="exam-row">
+      <div class="exam-date">
+        07/24 金
+        <span class="time">09:00</span>
+      </div>
+      <div>
+        <p class="exam-name">オプトロニクス</p>
+        <p class="exam-meta">配分 12% ・ 優先⑤（最後・最短スパート）</p>
+      </div>
+    </div>
+  </div>
+  </noscript>
+
+  <h2>週間ルーティン（フェーズ1〜4）</h2>
+  <div class="card">
+    <table>
+      <tr><th>曜日</th><th>空き時間帯</th><th>フェーズ1〜2の重点</th><th>フェーズ3〜4の重点</th></tr>
+      <tr><td>月（全休）</td><td>終日（バイト週は除く）</td><td>電子回路Ⅱ</td><td>電子回路Ⅱ（最優先）</td></tr>
+      <tr><td>火</td><td>朝(〜10:50)+15:00以降</td><td>音響工学（夕方）</td><td>音響工学・電子回路Ⅱ</td></tr>
+      <tr><td>水</td><td>12:30以降（バイト週は〜17:00）</td><td>制御の基礎</td><td>制御の基礎・音響工学</td></tr>
+      <tr><td>木</td><td>朝(〜10:50)+17:00以降</td><td>電子デバイス</td><td>電子回路Ⅱ・電子デバイス</td></tr>
+      <tr><td>金</td><td>17:00以降（バイト週は減/なし）</td><td>オプトロニクス</td><td>オプトロニクス・電気機器Ⅱ</td></tr>
+      <tr><td>土</td><td>終日</td><td>音響工学（メイン）</td><td>音響工学（メイン）</td></tr>
+      <tr><td>日</td><td>終日</td><td>電気機器Ⅱ + 余力で復習</td><td>余裕科目の補強・総復習</td></tr>
+    </table>
+  </div>
+
+  <h2>アルバイトシフトと調整方針</h2>
+  <div class="card">
+    <table>
+      <tr><th>週</th><th>バイト予定</th><th>調整方針</th></tr>
+      <tr><td>6/15-6/21</td><td>6/17(水)17-23, 6/19(金)17-23, 6/21(日)9-15</td><td>金曜の学習はほぼ無し前提。土曜にやや多めに音響工学を配置。</td></tr>
+      <tr><td>6/22-6/28</td><td>6/22(月)9-15</td><td>月曜は午後(15時以降)から電子回路Ⅱを開始。</td></tr>
+      <tr><td>6/29-7/5</td><td>6/29(月)11-15, 7/1(水)17-21:30, 7/3(金)17-22:30</td><td>月曜は午前(〜11時)に短時間だけ電子回路Ⅱ。水・金は学習時間が減るので火・土・日に振り替え。</td></tr>
+      <tr><td>7/6-7/12</td><td>7/6(月)9-15, 7/10(金)17-22:30</td><td>直前期で最も学習時間が必要な週。月曜午後・火〜木・土日にしっかり時間を確保し、電子回路Ⅱ・音響工学の最終仕上げに充てる。</td></tr>
+    </table>
+  </div>
+
+  <h2>その他の注意点</h2>
+  <div class="card">
+    <ul class="bullets">
+      <li>電気工学ゼミナール・コンピューターシミュレーションⅡ・実験はテストなし。レポート等の提出が出た場合は、スケジュールの「余白」（バイトのない夜や日曜の余力部分）で別途処理する。</li>
+      <li>英語特殊Aはおそらく7/22(水)に試験（未確定）。内容が軽いため3日前の7/19(日)から毎日短時間の対策を開始する方針。そのぶん7/22午後〜7/23の電子デバイス・電気機器Ⅱの対策時間が圧縮されるため、フェーズ3〜4のうちにこの2科目を問題集レベルまで仕上げておくことが重要。</li>
+      <li>音響工学は苦手分野（波動方程式・複素インピーダンス・dB計算）が多いため、各フェーズで「ノートを読む」だけで終わらせず、<code>問題集/音響工学_問題集.md</code> の解答・解説を自力で再現できるかを必ずチェックする。</li>
+      <li>7/14と7/17の試験が連続するため、フェーズ5は最も負荷が高い週になる。可能であればフェーズ4（7/6-7/12）のうちに電子回路Ⅱの仕上げを前倒しで終わらせておくと、フェーズ5の余裕が増える。</li>
+    </ul>
+  </div>
+
+  <p class="footer">この画面はブラウザで開いた日付に応じて「現在のフェーズ」「今日の予定」「次の試験までの日数」を自動更新します。<br>学習計画.md を更新したら、このファイルの該当データも合わせて編集してください。</p>
+</div>
+
+<script>
+const mdNotes = {"電子回路Ⅱ": {"note": "# 電子回路Ⅱ テスト対策チートシート\n\n## 第1回・第2回: 負帰還増幅回路\n*   **負帰還の原理と特徴**\n    *   **原理**: 出力電圧の符号を反転（位相を180°シフト）させて入力に戻す。\n    *   **利得の式**: $G = \\frac{A}{1+AH}$ （$AH \\gg 1$のとき $G \\approx \\frac{1}{H}$、増幅器の利得$A$に依存せず減衰器$H$で決まる）\n    *   **4つの特徴**:\n        1.  **利得の安定化**: 利得変動が $\\frac{1}{1+AH}$ に減少。\n        2.  **非線形ひずみの低減**: ひずみが $\\frac{1}{1+AH}$ に減少。\n        3.  **周波数特性の改善**: 利得は低下するが帯域幅が広がる。\n        4.  **入出力インピーダンスの変化**: 接続方式（直列・並列）により変化。\n            *   直列注入: 入力インピーダンスが $(1+AH)$ 倍に増加\n            *   並列帰還: 出力インピーダンスが $\\frac{1}{1+AH}$ 倍に減少\n*   **負帰還の4つの接続方式（入力側×出力側）と入出力インピーダンス**\n    *   負帰還増幅回路は **入力側（直列注入 / 並列注入）** と **出力側（直列帰還 / 並列帰還）** の組み合わせで4種類に分類される：(直列注入-直列帰還)、(直列注入-並列帰還)、(並列注入-直列帰還)、(並列注入-並列帰還)。\n    *   **入力側**：直列注入なら $Z_{in}' = (1+AH)Z_i$ （**増加**）、並列注入なら $Z_{in}' = \\frac{Z_i}{1+AH}$ （**減少**）。\n    *   **出力側**：直列帰還なら $Z_{out}' = (1+AH)Z_o$ （**増加**）、並列帰還なら $Z_{out}' = \\frac{Z_o}{1+AH}$ （**減少**）。\n    *   入力・出力の効果は独立に決まる（例：直列注入-並列帰還なら $Z_{in}$ 増加・$Z_{out}$ 減少が同時に起こる）。\n*   **負帰還回路の安定性**\n    *   原理：負帰還は入力に $-Hv_2$ を戻す方式だが、ループ利得 $AH$ の**位相が $-180^\\circ$ 回転**すると符号が反転し、負帰還が**正帰還**として働いてしまう。\n    *   このとき $|AH| \\geq 1$ であれば信号が増幅され続けて発振し**不安定**となり、$|AH| < 1$ であれば減衰するため**安定**となる。\n    *   判別法：ループ利得 $AH$ の振幅特性・位相特性をボード線図に描き、位相が $-180^\\circ$ となる周波数での $|AH|$ の大小（1未満か以上か）で安定性を判別する。\n\n## 第3回: 差動増幅回路\n*   **集積回路 (IC) の特徴**: シリコン半導体上に多数の素子を形成。コンデンサやコイルを集積できないため**直結合**となる。トランジスタ同士の特性はよく揃う。\n*   **差動増幅回路の特徴**: 2つの入力の差を増幅する回路（エミッタ接地を左右対称に配置）。\n    *   コンデンサ不要（直結合）。直流増幅可能。同相ノイズに強い。入力インピーダンスが高く、温度変化（ドリフト）の影響を受けにくい。\n    *   入力電圧 $v_1, v_2$ は **同相信号 $v_c$** と **差動信号 $v_d$** に分解できる：$v_1 = v_c+v_d$、$v_2 = v_c-v_d$。\n*   **差動利得・同相利得**（$R_{in}$: エミッタ接地段の入力インピーダンス、$\\beta$: 電流増幅率、$R_C$: コレクタ抵抗、$R_E$: 共通エミッタ抵抗）\n    *   **差動利得**: $A_d = \\frac{v_o}{v_1-v_2} = -\\frac{\\beta R_C}{R_{in}}$ （$R_E$ に依存しない。大きい方が良い）\n    *   **同相利得**: $A_c = \\frac{v_{o1}+v_{o2}}{v_1+v_2} = -\\frac{\\beta R_C}{R_{in}+2(1+\\beta)R_E}$ （小さい方が良い）\n    *   出力 $v_o = v_{o1}-v_{o2} = 2A_d v_d$ となり、**差動成分 $v_d$ のみが利得 $2A_d$ で出力に現れる**（同相成分は理想的には出力に出ない）。\n    *   **同相除去比 (CMRR)**: $CMRR = \\frac{A_d}{A_c}$ (差動利得 / 同相利得)。値が大きいほどノイズに強く優秀。\n    *   **高CMRR化**: $A_c$ の式より、共通エミッタ抵抗 $R_E$ を大きくすると $A_c$ が小さくなりCMRRが向上するが、$R_E$ に流れる直流電流（2つのTrのバイアス電流）を確保するため直流電源電圧 $V_{EE}$ も大きくする必要がある。そのため $R_E$ の代わりに、信号に対して高インピーダンスかつ直流電流を流せる**直流電流源**を用いる。\n\n## 第4回: 直流電流源回路とダーリングトン接続\n*   **カレントミラー回路**: 基準電流 $I_{ref}$ を一定にすれば負荷に依存せず一定のコレクタ電流 $I_c$ を流せる電流源。\n    *   **エミッタ抵抗付き基本回路**: $Q_1$（ダイオード接続）と$Q_2$の$V_{BE}$が等しいことを利用し、$R_{E1}I_{ref}=R_{E2}I_{out}$ より $I_{out} = \\frac{R_{E1}}{R_{E2}}I_{ref}$。$R_{E1}=R_{E2}$なら $I_{out}\\approx I_{ref}$、比を変えれば電流値を自由にスケーリングできる。\n    *   **抵抗を除いた基本ミラー（2石）**: $I_{ref}=(2+\\beta)I_B$、$I_{out}=I_C=\\beta I_B$ より $I_C = \\frac{\\beta}{2+\\beta}I_{ref}$。誤差は $O(1/\\beta)$ で、$\\beta\\gg1$なら $I_C\\approx I_{ref}$。\n    *   **高性能回路（3石）**: トランジスタを3つ使い、ベース電流の誤差を補償することで $I_C = \\dfrac{I_{ref}}{1+\\frac{2}{\\beta(\\beta+1)}}$ となり、誤差が $O(1/\\beta^2)$ まで小さくなる（$\\beta$ が小さくても精度が良い）。\n*   **ダーリングトン接続**: 2個のトランジスタを接続し、等価的に非常に大きな電流増幅率 $\\beta$ を持つ1つのトランジスタとして扱う手法。\n    *   等価電流増幅率: $\\beta \\cong \\beta_1\\beta_2$（2つのTrのβの積で大幅に増大）。等価エミッタ抵抗 $r_e \\cong r_{e2}$（後段のTrの$r_e$で近似）。\n\n## 第5回: 大信号増幅回路（電力増幅回路）\n*   **目的**: 負荷に大きな信号電力を供給する。大信号を扱うため**線形な小信号等価回路は使えず**、特性曲線を用いた図式解法（動特性の負荷線）を用いる。**電力変換効率**が重要。\n*   **動特性の負荷線**: 回路から $V_{CE} = V_{CC} - R_L I_C$ が得られる（直流負荷線）。$V_{CE}=0$ のとき最大電流 $I_{CM}=\\frac{V_{CC}}{R_L}$。\n*   **A級電力増幅回路**:\n    *   動作点を負荷線のほぼ中央に設定。\n    *   **特徴**: ひずみが最も小さいが、無信号時にも常に直流が流れるため効率が最も悪い。\n    *   **電力の配分**: 電源供給電力 $P_{DC}=\\frac{V_{CC}^2}{2R_L}$ のうち、負荷 $R_L$ で消費される直流電力 $P_{RL}=\\frac{V_{CC}^2}{4R_L}$（50%）、Trのコレクタ損失 $P_C=\\frac{V_{CC}^2}{8R_L}$（25%）、残り25%が信号電力として取り出せる。\n    *   **最大電力効率**: 25% （$\\eta = \\frac{P_L}{P_{DC}} = \\frac{V_{CC}^2 / 8R_L}{V_{CC}^2 / 2R_L}$）\n*   **B級プッシュ・プル電力増幅回路**:\n    *   無信号時は電流が流れないようにバイアス。正負の半サイクルずつ別々のトランジスタで増幅。\n    *   **特徴**: 常に電流が流れないため高効率だが、微小入力時に**クロスオーバーひずみ**が生じる。\n    *   **最大電力効率**: 78.5% ($\\frac{\\pi}{4}$)\n    *   **対策**: 順方向にわずかなバイアス電圧（$V_{BB}$）を加え、クロスオーバーひずみを改善する。\n\n## 第6回・第7回: 演算増幅器（オペアンプ）の基礎\n*   **理想演算増幅器の特性**: 入力インピーダンス $=\\infty$、出力インピーダンス $=0$、電圧利得 $=\\infty$。\n*   **ナレータ・ノレータモデル**:\n    *   入力端子間（**ナレータ**）: 電圧も電流も零（イマジナリーショート：$v_i = 0, i_i = 0$）。\n    *   出力端子（**ノレータ**）: 電圧・電流は周辺回路によって決まる。\n*   **基本回路と利得 $G$**:\n    *   **逆相（反転）増幅回路**: $G = -\\frac{R_2}{R_1}$\n    *   **正相（非反転）増幅回路**: $G = 1 + \\frac{R_2}{R_1}$\n    *   **ボルテージフォロア**: $G = 1$ （バッファ・緩衝器として利用。高入力インピーダンス・低出力インピーダンス）\n*   **利得と帯域幅**: 演算増幅器の周波数特性は $A_d(f) = \\dfrac{A_{d0}}{1+j f/f_c}$（$A_{d0}$: 直流利得、$f_c$: -3dB遮断周波数）。負帰還をかけた正相増幅回路では、直流利得 $G_0=\\dfrac{A_{d0}}{1+A_{d0}H}$（$H=\\frac{R_1}{R_1+R_2}$）に低下する一方、遮断周波数は $f_p' = f_c(1+A_{d0}H)$ まで広がり、$G_0 f_p' = A_{d0}f_c = GB$（**利得帯域幅積、常に一定**）が成り立つ。\n*   **二次的パラメータ**:\n    *   **オフセット電圧/電流**: 入力が0でも出力が0にならない現象（OFFSET NULL端子で調整）。\n    *   **スルーレート (SR)**: 出力電圧が変化できる最大の傾き（応答速度）。無ひずみ条件は $SR \\ge \\omega V_m$ または $f \\le \\frac{SR}{2\\pi V_m}$。\n\n## 第8回: 演算増幅器の応用（線形演算回路）\n*   **加算回路**: 複数入力の重み付き和を出力する。 $v_o = - R_f \\left(\\frac{v_1}{R_1} + \\frac{v_2}{R_2} + \\dots \\right)$（$R_1=R_2=\\dots=R_f$ なら $v_o=-(v_1+v_2+\\dots)$）\n*   **減算回路**: $v_A$ を $R_1$ 経由で逆相入力、$v_B$ を $R_3$ 経由で正相入力（$R_4$で接地）、$R_2$ を帰還抵抗とする構成。**抵抗比のバランス条件 $\\frac{R_2}{R_1}=\\frac{R_4}{R_3}$** を満たすとき、$v_o = \\frac{R_2}{R_1}(v_B - v_A)$ となり差動増幅器と同じ形になる。さらに $R_1=R_2=R_3=R_4$ ならば $v_o = v_B - v_A$。\n*   **高入力インピーダンス差動増幅回路**:\n    *   課題：減算回路は $R_1=R_2=R_3=R_4$ とすれば差動増幅器として動作するが、$v_1,v_2$ の信号源から見た入力インピーダンスが互いに等しくない（信号源の内部インピーダンスの影響を受けやすい）。\n    *   対策：減算回路の前段に、$v_1,v_2$ それぞれに対し演算増幅器 $Op_1,Op_2$ による**正相増幅器**を追加する。\n    *   利得：$v_o = \\frac{R_2}{R_1}(v_1-v_2)$（$R_1,R_2$ は後段の減算回路の抵抗）。1個の抵抗値で利得を変更できる。入力インピーダンスが極めて大きいため信号源の内部インピーダンスの影響を受けず、Opだけの減算回路と比べCMRRが大幅に改善された優れた差動増幅回路となる。\n*   **積分回路と微分回路**:\n    *   **積分回路**: 帰還部がコンデンサ $C$（入力は抵抗 $R$）。$v^-=0$ より $i=v_i/R$ がそのまま $C$ に流れ込み、$v_o = -\\frac{1}{C}\\int i \\, dt = -\\frac{1}{RC} \\int v_i \\, dt$。三角波の生成・帯域制限・**ローパス（低域通過）フィルタ**に利用される。\n    *   **微分回路**: 入力部がコンデンサ $C$（帰還は抵抗 $R$）。積分回路の $R$ と $C$ を入れ替えた回路。$v^-=0$ より $i=C\\frac{dv_i}{dt}$ がそのまま $R$ に流れ、$v_o = -iR = -RC \\frac{dv_i}{dt}$。**ハイパス（高域通過）フィルタ**として利用される。\n*   **演算増幅器の内部回路とパッケージ**: 内部はこれまでに学んだ差動増幅・電流源・電力増幅段などの組み合わせで構成される（例: LM741）。歴史的にはフェアチャイルド社の $\\mu A702$（1964年）が最初の製品で、その後の $\\mu A741$（1968年）が高性能・普及のきっかけとなった。8pin DIPパッケージでは OFFSET NULL、IN-、IN+、$V_{CC}^-$、OUT、$V_{CC}^+$ 等のピン配置を持つ。\n*   **オフセット電圧の調整**: OFFSET NULL端子間に可変抵抗を接続し、入力 $v_1,v_2=0$ のときに出力 $v_o=0$ となるよう調整する。\n", "prob": "# 電子回路Ⅱ 問題集（重要問題セレクション）\n\n本問題集は `電子回路Ⅱ_テスト対策ノート.md` の重要トピックから、試験で問われやすい計算・判定問題を厳選したものです。\nまず問題編だけを見て自力で解き、その後「解答・解説」で確認してください。\n\n---\n\n## 問題編\n\n### 問1（負帰還増幅回路：利得の安定化）\n開放利得 $A=1000$、帰還率 $H=0.099$ の負帰還増幅回路がある。\n1. 閉ループ利得 $G$ を求めよ。\n2. 何らかの原因で $A$ が $+10\\%$ 変動したとき、$G$ はおよそ何 % 変動するか。\n\n### 問2（負帰還回路の安定性）\nある負帰還増幅回路のループ利得 $AH$ のボード線図を測定したところ、位相が $-180^\\circ$ となる周波数において $|AH| = 2$（約6 dB）であった。この回路は安定か、不安定か。理由とともに答えよ。\n\n### 問3（差動増幅回路とCMRR）\n差動増幅回路において、エミッタ接地段の入力インピーダンス $R_{in}=2\\,\\text{k}\\Omega$、電流増幅率 $\\beta=100$、コレクタ抵抗 $R_C=10\\,\\text{k}\\Omega$、共通エミッタ抵抗 $R_E=5\\,\\text{k}\\Omega$ とする。\n1. 差動利得 $A_d$ を求めよ。\n2. 同相利得 $A_c$ を求めよ。\n3. 同相除去比 $CMRR=A_d/A_c$ を求め、dB値も求めよ。\n\n### 問4（カレントミラー回路の精度）\n基準電流 $I_{ref}=1\\,\\text{mA}$、$\\beta=50$ とする。\n1. 抵抗を除いた基本ミラー回路（2石）の出力電流 $I_{out}$ を求め、$I_{ref}$ からの誤差 [%] を求めよ。\n2. 高性能回路（3石）の場合の $I_{out}$ を求め、誤差 [%] を求めよ。\n\n### 問5（電力増幅回路の効率）\n$V_{CC}=12\\,\\text{V}$、$R_L=8\\,\\Omega$ のA級電力増幅回路について、\n1. 電源供給電力 $P_{DC}$ を求めよ。\n2. 負荷で取り出せる最大信号電力 $P_L$ を求めよ。\n3. 最大電力効率 $\\eta$ を求めよ。\n4. 同じ条件でB級プッシュ・プル増幅回路を用いた場合の理論最大効率と比較し、A級との違いを簡潔に述べよ。\n\n### 問6（オペアンプの利得帯域幅積）\nある演算増幅器の直流利得 $A_{d0}=10^5$、遮断周波数 $f_c=10\\,\\text{Hz}$ である（$GB=A_{d0}f_c=10^6\\,\\text{Hz}$）。\nこの増幅器を $R_1=1\\,\\text{k}\\Omega$、$R_2=10\\,\\text{k}\\Omega$ の正相（非反転）増幅回路として使用する。\n1. 帰還率 $H=\\dfrac{R_1}{R_1+R_2}$ を求めよ。\n2. 閉ループ直流利得 $G_0$ を求めよ（理想利得 $1+R_2/R_1$ と比較せよ）。\n3. 閉ループの遮断周波数 $f_p'$ を求めよ。\n\n### 問7（積分回路）\n$R=10\\,\\text{k}\\Omega$、$C=1\\,\\mu\\text{F}$ の積分回路（反転積分回路）に、振幅 $5\\,\\text{V}$ の方形波（一定値）を入力する。\n1. 出力電圧の変化率（傾き）$\\dfrac{dv_o}{dt}$ を求めよ。\n2. $0.5\\,\\text{ms}$ 間入力が一定であった場合、出力電圧はどれだけ変化するか。\n\n---\n---\n\n## 解答・解説編\n\n### 問1 解答\n1. $G = \\dfrac{A}{1+AH} = \\dfrac{1000}{1+1000\\times0.099} = \\dfrac{1000}{100.9} \\approx 9.91$\n\n2. 負帰還増幅回路では、$AH\\gg1$ のとき利得の変動率は\n   $$ \\frac{dG}{G} = \\frac{1}{1+AH}\\cdot\\frac{dA}{A} $$\n   で与えられる（利得の安定化）。$1+AH=100.9$ なので、\n   $$ \\frac{dG}{G} \\approx \\frac{1}{100.9}\\times10\\% \\approx 0.099\\% $$\n   **開放利得が10%変動しても、閉ループ利得はわずか約0.1%しか変動しない** —— これが負帰還による利得安定化の効果である。\n\n---\n\n### 問2 解答\n**不安定である。**\n\n負帰還増幅回路は、本来は出力の符号を反転して入力に戻す（$-Hv_2$）ことで負帰還として働く。しかし、ループ利得 $AH$ の位相が $-180^\\circ$ 回転すると、符号がさらに反転して**正帰還**として作用してしまう。\n\nこのとき、\n- $|AH|\\geq1$ ならば、信号が一巡するごとに振幅が増大（または維持）されるため発振し、**不安定**。\n- $|AH|<1$ ならば、一巡するごとに振幅が減衰するため**安定**。\n\n本問では位相 $-180^\\circ$ で $|AH|=2\\geq1$ なので、この回路は発振条件を満たし**不安定**となる。\n\n---\n\n### 問3 解答\n1. **差動利得**:\n   $$ A_d = -\\frac{\\beta R_C}{R_{in}} = -\\frac{100\\times10\\,\\text{k}\\Omega}{2\\,\\text{k}\\Omega} = -500 $$\n\n2. **同相利得**:\n   $$ A_c = -\\frac{\\beta R_C}{R_{in}+2(1+\\beta)R_E} = -\\frac{100\\times10\\,\\text{k}\\Omega}{2\\,\\text{k}\\Omega + 2\\times101\\times5\\,\\text{k}\\Omega} $$\n   分母 $= 2\\,\\text{k}\\Omega + 1010\\,\\text{k}\\Omega = 1012\\,\\text{k}\\Omega$\n   $$ A_c = -\\frac{1000\\,\\text{k}\\Omega}{1012\\,\\text{k}\\Omega} \\approx -0.988 $$\n\n3. **CMRR**:\n   $$ CMRR = \\frac{A_d}{A_c} = \\frac{-500}{-0.988} \\approx 506 $$\n   dB値: $20\\log_{10}(506) \\approx 54\\,\\text{dB}$\n\n   → $R_E$ が大きいほど $A_c$ が小さくなり CMRR が向上する、という性質が数値で確認できる。\n\n---\n\n### 問4 解答\n1. **基本ミラー（2石）**:\n   $$ I_{out}=I_C=\\frac{\\beta}{2+\\beta}I_{ref}=\\frac{50}{52}\\times1\\,\\text{mA}\\approx0.9615\\,\\text{mA} $$\n   誤差: $\\dfrac{1-0.9615}{1}\\times100\\%\\approx3.85\\%$\n\n2. **高性能回路（3石）**:\n   $$ I_{out}=\\frac{I_{ref}}{1+\\dfrac{2}{\\beta(\\beta+1)}}=\\frac{1\\,\\text{mA}}{1+\\dfrac{2}{50\\times51}}=\\frac{1\\,\\text{mA}}{1+\\dfrac{2}{2550}}\\approx\\frac{1\\,\\text{mA}}{1.000784}\\approx0.99922\\,\\text{mA} $$\n   誤差: $\\approx0.078\\%$\n\n   → 2石回路の誤差が $O(1/\\beta)\\approx2\\%$ オーダーなのに対し、3石回路では $O(1/\\beta^2)\\approx0.04\\%$ オーダーまで改善されており、約50倍精度が向上していることがわかる。\n\n---\n\n### 問5 解答\n1. $$ P_{DC}=\\frac{V_{CC}^2}{2R_L}=\\frac{12^2}{2\\times8}=\\frac{144}{16}=9\\,\\text{W} $$\n\n2. $$ P_L=\\frac{V_{CC}^2}{8R_L}=\\frac{144}{64}=2.25\\,\\text{W} $$\n\n3. $$ \\eta=\\frac{P_L}{P_{DC}}=\\frac{2.25}{9}=0.25=25\\% $$\n\n4. B級プッシュ・プル増幅回路の理論最大効率は $\\dfrac{\\pi}{4}\\approx78.5\\%$ であり、A級の25%よりはるかに高い。\n   これは、A級では無信号時にも常にバイアス電流（直流電流）が流れ続けて電力を消費するのに対し、B級では信号がない区間（半サイクル）はトランジスタがOFFとなり電流が流れないため、電力損失が大幅に少なくなるためである。一方でB級は微小信号時に**クロスオーバーひずみ**が発生する欠点がある。\n\n---\n\n### 問6 解答\n1. $$ H=\\frac{R_1}{R_1+R_2}=\\frac{1}{1+10}=\\frac{1}{11}\\approx0.0909 $$\n\n2. $$ A_{d0}H=\\frac{10^5}{11}\\approx9091 $$\n   $$ G_0=\\frac{A_{d0}}{1+A_{d0}H}=\\frac{10^5}{1+9091}=\\frac{10^5}{9092}\\approx11.0 $$\n   理想利得 $1+R_2/R_1=1+10=11$ とほぼ一致する（$A_{d0}H\\gg1$ のため、実際の利得が理想値に収束している）。\n\n3. $$ f_p'=f_c(1+A_{d0}H)=10\\times9092\\approx9.09\\times10^4\\,\\text{Hz}\\approx90.9\\,\\text{kHz} $$\n\n   検証: $G_0\\times f_p' \\approx 11\\times90.9\\times10^3\\approx1.0\\times10^6 = A_{d0}f_c = GB$ （利得帯域幅積は一定）。\n   → 帰還によって利得は $10^5\\to11$ に下がる代わりに、帯域幅は $10\\,\\text{Hz}\\to90.9\\,\\text{kHz}$ まで大幅に広がっている。\n\n---\n\n### 問7 解答\n積分回路の出力は $v_o=-\\dfrac{1}{RC}\\displaystyle\\int v_i\\,dt$ で与えられる。$v_i$ が一定値（$5\\,\\text{V}$）の間は、\n\n$$ \\frac{dv_o}{dt}=-\\frac{v_i}{RC} $$\n\n時定数 $RC=10\\,\\text{k}\\Omega\\times1\\,\\mu\\text{F}=10\\,\\text{ms}=0.01\\,\\text{s}$\n\n1. $$ \\frac{dv_o}{dt}=-\\frac{5\\,\\text{V}}{0.01\\,\\text{s}}=-500\\,\\text{V/s} $$\n\n2. $$ \\Delta v_o=\\frac{dv_o}{dt}\\times\\Delta t=-500\\,\\text{V/s}\\times0.5\\times10^{-3}\\,\\text{s}=-0.25\\,\\text{V} $$\n\n→ 方形波を積分回路に入力すると、入力が一定値の間は出力が一定の傾きで変化する**三角波**が得られる（積分回路の代表的な応用例）。\n"}, "音響工学": {"note": "# 音響工学 テスト対策チートシート\n\n## 1. 基礎物理・波動方程式\n### 1.1 音速と状態方程式\n* **音速の統一的な法則**: 流体・固体を問わず、音速は常に\n  $$ c = \\sqrt{\\frac{\\text{媒質の硬さ（弾性定数）}}{\\text{媒質の重さ（密度）}}} $$\n  という美しい対称性を持つ。\n* **音速 ($c$)**: 媒質の密度($\\rho$)と弾性定数に依存。\n  * 液体・固体（縦波）: $c = \\sqrt{\\frac{K}{\\rho}}$ （$K$: 体積弾性率。固体の縦波の場合はヤング率 $E$ を用いて $c=\\sqrt{E/\\rho}$ と表せる）\n  * 固体（横波）: $c = \\sqrt{\\frac{G}{\\rho}}$ （$G$: 剛性率（せん断弾性係数）。流体は剛性率を持たないため横波は伝搬しない）\n  * 気体: $c = \\sqrt{\\frac{\\gamma P}{\\rho}}$ ($\\gamma$: 比熱比, $P$: 圧力)\n    * 音の伝搬による圧縮・膨張は非常に速く、熱が逃げる暇がない「断熱変化」であるため、比熱比 $\\gamma$ によるラプラスの補正が必要（等温変化の式 $c=\\sqrt{P/\\rho}$ では実測値と合わない）。\n  * 空気中の音速の概算 (常温付近): $c \\approx 331.5 + 0.6t$ [m/s] ($t$: セルシウス温度。$20\\,^\\circ\\text{C}$ で約 $343\\,\\text{m/s}$）\n* **媒質による音速の比較（目安）**: 空気（$20\\,^\\circ\\text{C}$）約 $343\\,\\text{m/s}$ ＜ 水 約 $1500\\,\\text{m/s}$ ＜ コンクリート 約 $3200\\,\\text{m/s}$ ＜ 鉄 約 $5000\\,\\text{m/s}$ — 一般に**密度が大きくても、それ以上に剛性（硬さ）が大きい固体ほど音速は速い**。\n\n### 1.2 波動方程式 (Wave Equation)\n* **1次元波動方程式**:\n  $$ \\frac{\\partial^2 p}{\\partial t^2} = c^2 \\frac{\\partial^2 p}{\\partial x^2} $$\n  * ダランベールの解 (d'Alembert's solution): $p(x,t) = f(x - ct) + g(x + ct)$ （前進波と後退波の重ね合わせ）\n* **3次元波動方程式**:\n  $$ \\frac{\\partial^2 p}{\\partial t^2} = c^2 \\nabla^2 p $$\n  * ラプラシアン $\\nabla^2 = \\frac{\\partial^2}{\\partial x^2} + \\frac{\\partial^2}{\\partial y^2} + \\frac{\\partial^2}{\\partial z^2}$\n* **ヘルムホルツ方程式 (Helmholtz equation)**: 定常状態（調和振動 $e^{j\\omega t}$）における波動方程式。\n  $$ \\nabla^2 P + k^2 P = 0 $$\n  ($k = \\frac{\\omega}{c}$: 波数)\n  * 解は進行波と反射波の和: $\\phi(x,t) = Ae^{j(\\omega t - kx)} + Be^{j(\\omega t + kx)}$（速度ポテンシャル）。音圧・粒子速度はこれから導出できる。\n\n### 1.3 波の重ね合わせ・干渉・うなり\n* **重ね合わせの原理**: 2つの波が同時に存在するとき、合成波の音圧は単純な和 $p(x,t) = p_1(x,t) + p_2(x,t)$ となる（音圧変動が非常に大きい場合は非線形性が顕在化し成立しなくなる）。\n* **干渉（同周波数の場合）**: $p_1 = p\\cos\\phi_1,\\ p_2 = p\\cos\\phi_2$ とすると、\n  $$ p(x,t) = 2p\\cos\\left(\\frac{\\phi_1-\\phi_2}{2}\\right)\\cos\\left(\\frac{\\phi_1+\\phi_2}{2}\\right) $$\n  * **同位相** ($\\Delta\\phi = 0, 2\\pi, 4\\pi, \\dots$): $\\cos(\\Delta\\phi/2)=1$ → 振幅が**2倍**（強め合う、音圧大）。\n  * **逆位相** ($\\Delta\\phi = \\pi, 3\\pi, \\dots$): $\\cos(\\Delta\\phi/2)=0$ → 振幅が**0**（打ち消し合う）。\n* **うなり（beat、わずかに異なる周波数 $\\omega_1 \\neq \\omega_2$ の重畳）**:\n  $$ p(x,t) = 2p\\cos\\left(\\frac{k_1-k_2}{2}x - \\frac{\\omega_1-\\omega_2}{2}t\\right)\\cos\\left(\\frac{k_1+k_2}{2}x - \\frac{\\omega_1+\\omega_2}{2}t\\right) $$\n  * 前半（包絡線の項）がうなりを与え、うなり周波数は $\\Delta f = |f_1 - f_2|$。\n  * 応用例: 調律（うなりが消える＝周波数が一致）、能動騒音制御 ANC（外部騒音と逆位相の音をスピーカから出して打ち消す）。\n\n### 1.4 縦波・横波とバルク波・ガイド波\n* **縦波（Longitudinal wave / P波）**: 媒質粒子の振動方向が波の進行方向と**平行**。圧力の「密」「疎」が伝わるため**圧縮波・疎密波**とも呼ばれる。気体・液体・固体の**すべて**で伝搬可能。\n* **横波（Transverse wave / S波）**: 媒質粒子の振動方向が波の進行方向と**直交**。せん断（ズレ）変形に対する抵抗（剛性率）が必要なため、**固体中のみ**伝搬可能（気体・液体はせん断弾性力を持たないため横波は存在しない）。\n  * → **媒質の構造が「許容される波の形」を決定する**：流体（気体・液体）は縦波（P波）のみ、固体は縦波＋横波（S波）の両方を伝搬できる。\n* **バルク波（体積波）**: 固体内部を伝搬する縦波・横波（媒質の体積中を伝わる波）の総称。\n* **ガイド波**: バルク波のまま伝搬できない境界条件（空気と固体の境界、薄い板の中など）では、その境界条件に従って縦波と横波が合成され、ガイド波が発生する。\n  * **レイリー波（表面波）**: 縦波と横波（SV波）が固体表層付近で合成された波。レイリー波音速（等方性媒質の場合）:\n    $$ c_R = \\frac{0.87+1.12\\nu}{1+\\nu}\\sqrt{\\frac{E}{2\\rho(1+\\nu)}} $$\n    （$E$: ヤング率（縦弾性係数）、$\\nu$: ポアソン比、$\\rho$: 密度）\n  * **ランプ波（板波）**: 波長に対して十分に薄い板を伝搬するガイド波。対称モード（Sモード: S0, S1, S2,…）と非対称モード（Aモード: A0, A1, A2,…）に分類される。\n  * 応用例: スマートフォンのSAW（Surface Acoustic Wave）デバイス、非破壊検査（板厚測定など）。\n\n## 2. 音の伝搬と放射\n### 2.1 音源の種類と伝搬\n* **点音源 (Point Source)**: 球面波を放射。\n  * 音圧 $p \\propto \\frac{1}{r}$\n  * 音の強さ (Intensity) $I \\propto \\frac{1}{r^2}$ （距離の逆2乗則）\n  * 距離が2倍になると音圧レベルは **-6 dB** 低下。\n* **線音源 (Line Source)**: 円筒波を放射。（道路交通騒音など）\n  * 音圧 $p \\propto \\frac{1}{\\sqrt{r}}$\n  * 音の強さ $I \\propto \\frac{1}{r}$\n  * 距離が2倍になると音圧レベルは **-3 dB** 低下。\n* **面音源 (Surface Source)**: 平面波を放射。\n  * 近距離（近傍界・フレネル領域）では音圧は減衰しない。\n  * 遠距離（遠方界・フラウンホーファー領域）では指向性が生じ、点音源のように振る舞う。ベッセル関数 $J_0, J_1$ を用いて指向性パターンが記述される。\n\n### 2.2 室内音響\n* **残響時間 (Reverberation Time, $T_{60}$)**: 音源が停止してから音のエネルギー密度が $10^6$ 分の1（音圧レベルで **60 dB** 減衰）になるまでの時間。\n* **セイビンの残響式 (Sabine's Equation)**: 吸音率が低い（響きの長い）室内に適用。\n  $$ T = 0.161 \\frac{V}{A} $$\n  ($V$: 部屋の容積 [m³], $A$: 等価吸音面積 [m²], $A = \\sum S_i \\alpha_i$)\n* **アイリングの残響式 (Eyring's Equation)**: 吸音率が高い（響きの短い）室内に適用（Sabine式の補正）。\n  $$ T = 0.161 \\frac{V}{-S \\ln(1 - \\bar{\\alpha})} $$\n  ($S$: 部屋の総表面積, $\\bar{\\alpha}$: 平均吸音率)\n* **残響時間の実測**: 音圧レベルが定常状態から**60 dB減衰**するまでの時間として定義・計測する（直接法。実際は測定可能なレベル差（例: 30 dB）から外挿することが多い）。\n* 各種ホールの残響時間の目安: 東京ドーム 約4 s、コンサートホール 約1.5〜2.3 s 程度（響きの長さは用途・容積・吸音率で決まる）。\n\n## 3. 音の物理量・レベル表示・反射・透過\n### 3.1 音響インテンシティ・エネルギー密度・音響パワー\n* **音響インテンシティ (Sound Intensity) $I$**: 単位面積を単位時間に通過する音響エネルギー。$I = \\langle p v \\rangle$ [W/m²]。\n  * 平面進行波の場合: $I = \\dfrac{p^2}{\\rho c}$\n* **音響エネルギー密度 $w$**: 単位体積あたりの音響エネルギー [J/m³]。$w = \\dfrac{1}{2}\\rho v^2 + \\dfrac{p^2}{2\\rho c^2}$\n  * 平面進行波の場合: $w = \\dfrac{p^2}{\\rho c^2} = \\dfrac{I}{c}$\n* **音響パワー (Sound Power) $W$**: 音源が単位時間あたりに放出する音響エネルギー [W]。\n  * 平面波: $W = IS$ （$S$: 面積）\n  * 球面波: $W = I \\cdot 4\\pi r^2$ （$r$: 音源からの距離）\n\n### 3.2 デシベル表示（音圧レベル・音響パワーレベル）\n* **音圧レベル (Sound Pressure Level, SPL) $L_p$**:\n  $$ L_p = 20\\log_{10}\\frac{p}{p_0}\\ \\text{[dB]} $$\n  $p_0 = 2\\times10^{-5}$ Pa（人間の最小可聴値・基準音圧）\n* **音響パワーレベル $L_W$**:\n  $$ L_W = 10\\log_{10}\\frac{W}{W_0}\\ \\text{[dB]} $$\n  $W_0 = 10^{-12}$ W（基準音響パワー）\n* **振幅量とエネルギー量のdB表示の違い**: 音圧・粒子速度などの**振幅量**は$20\\log_{10}$、音響パワー・インテンシティなどの**エネルギー量**は$10\\log_{10}$を用いる（エネルギー $\\propto$ 振幅²のため、$10\\log_{10}(A^2)=20\\log_{10}A$ と一致する）。\n\n### 3.3 固有音響インピーダンス (Specific Acoustic Impedance)\n* $Z_c = \\rho c$\n  * 音圧 $p$ と粒子速度 $v$ の比: $Z_c = \\frac{p}{v}$\n  * 媒質に固有の値。異なる媒質の境界では反射と透過が起こる。\n\n### 3.4 反射と透過\n* 垂直入射の場合の反射率 $R$ と透過率 $T$:\n  * 音圧反射係数 $r_p = \\frac{Z_2 - Z_1}{Z_2 + Z_1}$\n  * 音圧透過係数 $t_p = \\frac{2Z_2}{Z_2 + Z_1}$\n  * 反射率（エネルギー比） $R = |r_p|^2 = \\left( \\frac{Z_2 - Z_1}{Z_2 + Z_1} \\right)^2$\n  * 透過率（エネルギー比） $T = \\frac{4Z_1 Z_2}{(Z_2 + Z_1)^2}$ ($R + T = 1$)\n* **音響整合層 (acoustic matching layer)**: 媒質1（インピーダンス$Z_1$）と媒質3（$Z_3$）の間に、インピーダンス $Z_2 = \\sqrt{Z_1 Z_3}$ の層を挿入すると反射を最小化できる。\n  * さらに層の厚さを波長の$\\lambda/4$（中心周波数基準）にすると、層内で生じる反射波が逆位相となり互いに打ち消し合う（無反射条件）。超音波探触子などに応用。\n\n## 4. 心理音響学・聴覚系\n### 4.1 基本法則と尺度\n* **ウェーバー・フェヒナーの法則 (Weber-Fechner Law)**: 「感覚の大きさは、刺激の強さの対数に比例する」。デシベル (dB) 尺度の根拠。\n* **ラウドネス (Loudness)**: 音の大きさの主観的属性。\n  * **等ラウドネス曲線 (Equal-loudness contours)**: 同じ大きさに聞こえる純音の音圧レベルを周波数ごとに結んだ曲線。低音域では感度が低い。\n  * 単位: **ホン (Phon)** (1 kHzの純音の音圧レベルで定義)、**ソン (Sone)** (リニアな尺度。40 phon = 1 sone、ラウドネスが2倍になればsone値も2倍)。\n* **A特性 (A-weighting)**: 人間の聴覚感度（おおむね40 phonの等ラウドネス曲線に基づく）を模した周波数重み付け。騒音計で用いられる。dB(A)と表記。\n\n### 4.2 聴覚系の構造と経路\n* **耳の構造**: **外耳 (Outer Ear)** → **中耳 (Middle Ear)** → **内耳 (Inner Ear)**\n  * 外耳: 耳介〜外耳道（鼓膜まで）。外耳道は直径6〜8mm、長さ約25mmの音響管で、共振により2.5〜3kHz付近の感度を高める。\n  * 中耳: 鼓膜の空気振動を耳小骨を介して機械振動に変換し、内耳へ伝える。\n  * 内耳: 蝸牛内を流体の波として伝わり、基底膜の振動として周波数分析される。\n* **聴覚経路**: 外界 → 外耳 → 中耳 → 内耳 → 聴神経（脳幹の蝸牛神経核・上オリーブ複合体）→ 中脳 → 聴覚野（脳で音として認識される）。\n\n### 4.3 マスキングと聴覚フィルタ\n* **マスキング (Masking)**: ある音が他の音（マスカ）の存在によって聞こえにくくなる現象。\n  * 同時マスキング（周波数マスキング）：マスカの周波数に近い音ほどマスクされやすい。低音は高音をマスクしやすい。\n  * 経時マスキング（時間マスキング）：前方マスキング（マスカの前の音がマスクされる）、後方マスキング（マスカの後の音がマスクされる）。\n* **聴覚フィルタ (Auditory Filters)**: 基底膜 (Basilar membrane) は周波数分析器として機能。\n  * 蝸牛 (Cochlea) 内の基底膜の特定の場所が特定の周波数に共振（部位的説・場所説）。\n  * 臨界帯域 (Critical Band): 聴覚フィルタの帯域幅。この帯域内の音のエネルギーが積分されてラウドネスやマスキングが決定される。\n\n### 4.4 音脈分疑 (Auditory Scene Analysis) と音源定位\n* 複数の音源から到達した音波の混合物から、個々の音源を分離・知覚する過程。\n* 音の高さ (Pitch)、音色 (Timbre)、空間的定位 (Spatial location) などの手がかりを用いる。\n* **先行音効果（precedence effect）**: 同一の音が時間差（約1 ms程度）をもって複数方向から届くとき、最初に到達した音（先行音）の方向に音像が定位される現象。遅れ時間が大きくなると、別の音として分離して聞こえるようになる（音像のローカリゼーション・残響下での定位安定性に関係）。\n\n### 4.5 ノイズネス（Noisiness/Annoyance）の評価\n* 騒音の主観評価は以下の3つの属性から成る。\n  1. **第一属性**: エネルギー量に基づく評価（ラウドネスに対応）。\n  2. **第二属性**: 鋭さ・刺激性などの音響的特徴（高周波成分の有無など）に基づく評価。\n  3. **第三属性**: 個人の経験・状況・心理的要因による不快感の評価。\n\n## 5. 音の発生源（第1回）\n### 5.1 音波の基本的な見方\n* **音波**: スピーカなどの振動が、媒質（空気）中の粒子の振動として伝わる波。\n* **連続体としての扱い**: 媒質を粒子（分子）の集団として厳密に扱う「分子論的な見方」もあるが、音波の波長 $\\lambda$ が粒子の平均自由行程 $L$ や粒子サイズ $M$ よりも十分大きい（$L \\ll M \\ll \\lambda$）場合には、媒質を連続体として扱うことができる。\n* **波長・周波数・音速の関係**: $\\lambda = \\dfrac{c}{f}$ （$\\lambda$: 波長 [m]、$f$: 周波数 [Hz]、$c$: 音速 [m/s]）\n\n### 5.2 音の発生源の4分類\n音の発生源は、流体力学的には以下の4つに大別される。\n1. **物体の振動**: 外力を受けた物体が固有のモード（振動の形）で振動する。例: スピーカ、弦楽器、打楽器。\n2. **気流の乱れ（空力音）**: 流れが障害物に当たり、渦が生成・消滅することで音が発生する。例: フルート、エオルス音（電線に強い風が当たって発生する音）、噴流騒音（ノズルからの噴出音）。\n3. **急激な膨張・収縮**: 熱膨張や破裂による急激な体積変化で音が発生する。例: 雷鳴、風船の破裂、アーク放電。\n4. **断続的な流れ**: 連続した気流が、弁（バルブ）の開閉によってパルス状に断続されることで音が発生する。例: 声帯（咽頭原音）、リード楽器（サキソフォン・クラリネット・オーボエなど）。\n\n### 5.3 楽器の音源による分類\n* **膜鳴楽器**: 膜が張ってある楽器。太鼓、ティンパニーなど。\n* **打楽器（体鳴楽器）**: 木琴、鉄琴、トライアングル、シンバルなど。\n* **撥弦楽器**: 弦をはじいて振動させる楽器。ギター、琴など。\n* **打弦楽器**: 弦をたたいて振動させる楽器。ピアノなど。\n* **擦弦楽器**: 弦を弓でこすって振動させる楽器。バイオリン、ビオラ、チェロなど。\n\n### 5.4 発声機構（咽頭原音）\n* 肺から出された呼気は、気管 → 喉頭（声帯がある）→ 咽頭 → 口腔を通り、唇から声として発せられる。\n* 喉頭にある**声帯**が開閉運動（声門の開閉）を行うことで、連続的な呼気が**断続的なパルス状の気流**に変換され、これが音波（咽頭原音）となる。\n* この咽頭原音が声道（咽頭腔・口腔・鼻腔）の形状によって共鳴・フィルタリングされることで、各種の音色（母音など）が形成される。\n", "prob": "# 音響工学 問題集（重要問題セレクション）\n\n本問題集は `音響工学_テスト対策ノート.md` の重要トピックから、試験で問われやすい計算・判定問題を厳選したものです。\nまず問題編だけを見て自力で解き、その後「解答・解説」で確認してください。\n\n---\n\n## 問題編\n\n### 問1（音速の計算）\n気温 $20\\,^\\circ\\text{C}$ における空気中の音速 $c$ を、近似式 $c\\approx331.5+0.6t\\,\\text{[m/s]}$（$t$: セルシウス温度）を用いて求めよ。\n\n### 問2（うなり）\n周波数 $440\\,\\text{Hz}$ と $444\\,\\text{Hz}$ の2つの音叉を同時に鳴らした。発生する「うなり」の周波数 $\\Delta f$ を求めよ。\n\n### 問3（距離による音圧レベルの減衰）\n点音源から $10\\,\\text{m}$ の位置で測定した音圧レベルが $80\\,\\text{dB}$ であった。\n1. 点音源として、$20\\,\\text{m}$ の位置での音圧レベルを求めよ。\n2. 同じ音源を線音源（道路交通騒音のような）とみなした場合、$20\\,\\text{m}$ の位置での音圧レベルを求めよ。\n\n### 問4（セイビンの残響式）\n容積 $V=500\\,\\text{m}^3$ の部屋において、等価吸音面積 $A=40\\,\\text{m}^2$ であるとき、セイビンの残響式 $T=0.161\\dfrac{V}{A}$ を用いて残響時間 $T$ を求めよ。\n\n### 問5（音圧レベルと音響インテンシティ）\nある音場における音圧の実効値が $p=2\\,\\text{Pa}$ であるとする。基準音圧 $p_0=2\\times10^{-5}\\,\\text{Pa}$、空気の固有音響インピーダンス $\\rho c\\approx415\\,\\text{kg}/(\\text{m}^2\\cdot\\text{s})$ とする。\n1. 音圧レベル $L_p=20\\log_{10}(p/p_0)$ を求めよ。\n2. 音響インテンシティ $I=\\dfrac{p^2}{\\rho c}$ を求めよ。\n\n### 問6（音響インピーダンスの不整合と整合層）\n空気の固有音響インピーダンス $Z_1\\approx415\\,\\text{kg}/(\\text{m}^2\\cdot\\text{s})$、水の固有音響インピーダンス $Z_2\\approx1.5\\times10^6\\,\\text{kg}/(\\text{m}^2\\cdot\\text{s})$ とする。\n1. 空気から水へ垂直入射する音波の、音圧反射係数 $r_p=\\dfrac{Z_2-Z_1}{Z_2+Z_1}$ と反射率（エネルギー比）$R=r_p^2$ を求めよ。\n2. この境界に音響整合層を挿入して反射を最小化したい。整合層の特性インピーダンス $Z_m$ をいくらにすればよいか。\n\n### 問7（縦波・横波と音速の一般式）\n鉄について、ヤング率 $E=200\\,\\text{GPa}$、剛性率（せん断弾性係数）$G=80\\,\\text{GPa}$、密度 $\\rho=7870\\,\\text{kg/m}^3$ とする。\n1. 鉄中を伝わる縦波（P波）の音速 $c_L=\\sqrt{E/\\rho}$ を求めよ。\n2. 鉄中を伝わる横波（S波）の音速 $c_T=\\sqrt{G/\\rho}$ を求めよ。\n3. 空気中では横波が存在しない理由を、媒質の力学的性質の観点から述べよ。\n\n### 問8（音の発生源の分類）\n音の発生源は、流体力学的に次の4つに大別される：①物体の振動、②気流の乱れ（空力音）、③急激な膨張・収縮、④断続的な流れ。\n次の(a)〜(d)の音が、それぞれどの分類に該当するか答えよ。\n- (a) ギターの弦をはじいたときの音\n- (b) 風船が割れる音\n- (c) フルートを吹いたときの音\n- (d) 声帯による発声（人の声）\n\n---\n---\n\n## 解答・解説編\n\n### 問1 解答\n$$ c\\approx331.5+0.6\\times20=331.5+12=343.5\\,\\text{m/s} $$\n\n→ いわゆる「音速約340 m/s」という値の根拠となる計算。気温が高くなるほど音速が速くなることも、この式から確認できる。\n\n---\n\n### 問2 解答\nうなりの周波数は、2つの周波数の差の絶対値で与えられる。\n\n$$ \\Delta f=|f_1-f_2|=|440-444|=4\\,\\text{Hz} $$\n\n→ 1秒間に4回、音の大きさが強弱を繰り返す（うなりを感じる）ことになる。楽器の調律では、このうなりが消える（$\\Delta f \\to 0$）ように周波数を一致させる。\n\n---\n\n### 問3 解答\n1. **点音源**: 音圧 $p\\propto1/r$（音の強さ $I\\propto1/r^2$）であり、距離が2倍になるごとに音圧レベルは $-6\\,\\text{dB}$ 低下する。$10\\,\\text{m}\\to20\\,\\text{m}$ は距離2倍なので、\n\n   $$ L_p(20\\,\\text{m})=80-6=74\\,\\text{dB} $$\n\n2. **線音源**: 音圧 $p\\propto1/\\sqrt{r}$（音の強さ $I\\propto1/r$）であり、距離が2倍になるごとに音圧レベルは $-3\\,\\text{dB}$ 低下する。\n\n   $$ L_p(20\\,\\text{m})=80-3=77\\,\\text{dB} $$\n\n→ 同じ「距離2倍」でも、音源の種類（点音源か線音源か）によって減衰量が異なる（点音源の方がよく減衰する）ことが、道路交通騒音の評価などで重要になる。\n\n---\n\n### 問4 解答\nセイビンの残響式 $T=0.161\\dfrac{V}{A}$ に $V=500\\,\\text{m}^3$、$A=40\\,\\text{m}^2$ を代入する。\n\n$$ T=0.161\\times\\frac{500}{40}=0.161\\times12.5\\approx2.0\\,\\text{s} $$\n\n→ コンサートホールの目安（1.5〜2.3 s程度）に近い値であり、適度な響きをもつ部屋であることがわかる。等価吸音面積 $A$（吸音率の高い材料を増やす）を変えることで、残響時間を調整できる。\n\n---\n\n### 問5 解答\n1. $$ L_p=20\\log_{10}\\frac{p}{p_0}=20\\log_{10}\\frac{2}{2\\times10^{-5}}=20\\log_{10}(1\\times10^5)=20\\times5=100\\,\\text{dB} $$\n\n   → $100\\,\\text{dB}$ は、電車の通過音やコンサートの大音量に相当するレベル。\n\n2. 平面進行波の音響インテンシティの式 $I=\\dfrac{p^2}{\\rho c}$ より、\n\n   $$ I=\\frac{(2\\,\\text{Pa})^2}{415\\,\\text{kg}/(\\text{m}^2\\cdot\\text{s})}=\\frac{4}{415}\\approx9.6\\times10^{-3}\\,\\text{W/m}^2 $$\n\n   → 音圧（振幅量）は $20\\log_{10}$、音響インテンシティ（エネルギー量）は $10\\log_{10}$ でdB化するという違いを意識しておくこと（$I\\propto p^2$ なので、$10\\log_{10}(p^2/p_0^2\\cdot(\\cdots))=20\\log_{10}(p/p_0)$ と整合する）。\n\n---\n\n### 問6 解答\n1. 音圧反射係数:\n   $$ r_p=\\frac{Z_2-Z_1}{Z_2+Z_1}=\\frac{1.5\\times10^6-415}{1.5\\times10^6+415}\\approx\\frac{1.4996\\times10^6}{1.5004\\times10^6}\\approx0.9994 $$\n\n   反射率（エネルギー比）:\n   $$ R=r_p^2\\approx0.9989\\ (\\approx99.9\\%) $$\n\n   → 空気と水の音響インピーダンスの差が非常に大きい（約3600倍）ため、入射音響エネルギーのほぼ**100%が反射**してしまい、水中へはほとんど音が透過しない。これが、超音波探触子を生体（水とほぼ同じ音響特性）に直接当てる際に整合層が必要となる理由である。\n\n2. 音響整合層の最適な特性インピーダンスは、両側のインピーダンスの**相乗平均（幾何平均）**で与えられる。\n\n   $$ Z_m=\\sqrt{Z_1Z_2}=\\sqrt{415\\times1.5\\times10^6}=\\sqrt{6.225\\times10^8}\\approx2.5\\times10^4\\,\\text{kg}/(\\text{m}^2\\cdot\\text{s}) $$\n\n   さらに、この整合層の厚さを使用周波数の波長の $\\lambda/4$ にすることで、層内で生じる多重反射波が逆位相となって打ち消し合い、反射をほぼゼロにできる（無反射条件）。\n\n---\n\n### 問7 解答\n音速の一般式 $c=\\sqrt{\\dfrac{\\text{弾性定数}}{\\rho}}$ を用いる。\n\n1. $$ c_L=\\sqrt{\\frac{E}{\\rho}}=\\sqrt{\\frac{200\\times10^9}{7870}}=\\sqrt{2.541\\times10^7}\\approx5.04\\times10^3\\,\\text{m/s}\\approx5040\\,\\text{m/s} $$\n\n2. $$ c_T=\\sqrt{\\frac{G}{\\rho}}=\\sqrt{\\frac{80\\times10^9}{7870}}=\\sqrt{1.017\\times10^7}\\approx3.19\\times10^3\\,\\text{m/s}\\approx3190\\,\\text{m/s} $$\n\n   → $E>G$ であるため、同じ媒質中でも縦波（P波）の方が横波（S波）よりも速く伝わる（$c_L>c_T$）。\n\n3. 横波は、媒質が**せん断（ズレ）変形に対する復元力（剛性率 $G$）**を持つ場合にのみ伝搬できる。気体・液体は分子間の結合が弱く、形を変える力（せん断力）に対してほとんど抵抗できない（$G\\approx0$）ため、横波は存在できない。一方、縦波（圧縮・伸長による密度変化）に対する復元力（体積弾性率 $K$）は気体・液体・固体のいずれも持つため、縦波はすべての媒質で伝搬できる。\n\n---\n\n### 問8 解答\n- (a) ギターの弦をはじいたときの音 → **①物体の振動**（弦が外力を受けて固有のモードで振動する）\n- (b) 風船が割れる音 → **③急激な膨張・収縮**（内部の空気が急激に体積変化する）\n- (c) フルートを吹いたときの音 → **②気流の乱れ（空力音）**（息の流れがエッジに当たって渦が生成・消滅する）\n- (d) 声帯による発声（人の声） → **④断続的な流れ**（声帯の開閉によって呼気がパルス状に断続される＝咽頭原音）\n"}, "制御の基礎": {"note": "# 「制御の基礎」テスト対策チートシート\n\n本資料は「制御の基礎」講義（第1回〜第9回）の重要項目、公式、定義を整理したテスト対策用チートシートです。\n\n---\n\n## 1. 制御とモデリングの基礎\n*   **制御系の標準的な構成（用語）**:\n    *   **制御対象**: 制御したい対象システム。**操作量**を入力、**制御量**を出力とする。\n    *   **目標値**: 制御量がそうあってほしい値。**偏差** = 目標値 − 制御量（センサで検出した制御量）。\n    *   **制御器**: 偏差から操作量を決定する機構。\n    *   **外乱**: 操作量以外から制御対象に加わる、制御できない入力（ノイズ等）。\n    *   例：電気コンロ → 操作量=ダイヤル位置、制御量=温度、外乱=フタの開閉。\n*   **フィードバック制御**: 目標値と制御量（センサ値）の偏差を操作量の決定に反映させる制御方式。\n*   **フィードフォワード制御**: 制御対象の特性が事前にわかっているとき、目標値（や外乱）から制御量が一致するように操作量を**あらかじめ**決定して与える方式。外乱の影響を補償する際にも用いられる。\n*   **ダイナミカルシステム**: 出力がそのときの入力だけでなく、過去の履歴にも依存するシステム。微分方程式で記述される（対：静的システムは出力が現在の入力だけで決まる）。\n*   **PID制御**:\n    *   **P (比例)**: 現在の偏差に応じて操作量を決定。\n    *   **I (積分)**: 過去の偏差の蓄積に応じて操作量を決定。\n    *   **D (微分)**: 未来の偏差を予測して操作量を決定。\n\n---\n\n## 2. ラプラス変換と伝達関数\n\n### 2.1 ラプラス変換の基本\n*   **定義式**: $\\mathcal{L}[f(t)] = F(s) = \\int_0^\\infty f(t) e^{-st} dt$ （$s$: 複素数）\n*   **微分定理** (初期値0の場合): $\\mathcal{L}[f'(t)] = sF(s)$ 、 $\\mathcal{L}[f''(t)] = s^2F(s)$\n*   **積分定理** (初期値0の場合): $\\mathcal{L}[\\int f(t) dt] = \\frac{1}{s} F(s)$\n*   **最終値の定理**: $\\lim_{t \\to \\infty} y(t) = \\lim_{s \\to 0} sY(s)$\n*   **基本的な関数のラプラス変換表**（頻出）:\n\n    | $f(t)$ | $F(s)$ | $f(t)$ | $F(s)$ |\n    |---|---|---|---|\n    | $\\delta(t)$ (デルタ関数) | $1$ | $\\sin \\omega t$ | $\\dfrac{\\omega}{s^2+\\omega^2}$ |\n    | $1$ | $\\dfrac{1}{s}$ | $\\cos \\omega t$ | $\\dfrac{s}{s^2+\\omega^2}$ |\n    | $t$ | $\\dfrac{1}{s^2}$ | $e^{-at}\\sin \\omega t$ | $\\dfrac{\\omega}{(s+a)^2+\\omega^2}$ |\n    | $e^{-at}$ | $\\dfrac{1}{s+a}$ | $e^{-at}\\cos \\omega t$ | $\\dfrac{s+a}{(s+a)^2+\\omega^2}$ |\n    | $te^{-at}$ | $\\dfrac{1}{(s+a)^2}$ | $\\dfrac{t^n}{n!}$ | $\\dfrac{1}{s^{n+1}}$ |\n\n*   **ヘビサイドの展開公式（部分分数展開）**: $F(s)=\\dfrac{P(s)}{Q(s)}$ で、$Q(s)=(s-p_1)(s-p_2)\\cdots(s-p_n)$（重根なし）のとき、\n    $$F(s) = \\sum_{i=1}^{n} \\frac{c_i}{s-p_i}, \\qquad c_i = \\left[(s-p_i)F(s)\\right]_{s=p_i}$$\n    逆ラプラス変換は各項 $\\frac{c_i}{s-p_i} \\to c_i e^{p_i t}$ として求められる（時間応答を求める際の基本ツール）。\n    *   例: $F(s)=\\dfrac{s-2}{(s+1)(s+2)} = \\dfrac{c_1}{s+1}+\\dfrac{c_2}{s+2}$ とおくと、$c_1=\\left.\\dfrac{s-2}{s+2}\\right|_{s=-1}=-3$、$c_2=\\left.\\dfrac{s-2}{s+1}\\right|_{s=-2}=4$ より $F(s)=\\dfrac{-3}{s+1}+\\dfrac{4}{s+2}$。\n\n### 2.2 基本要素の伝達関数\n*   **伝達関数 $G(s)$**: すべての初期値を0としたときの、入力のラプラス変換 $U(s)$ と出力のラプラス変換 $Y(s)$ の比。$G(s) = \\frac{Y(s)}{U(s)}$\n*   **比例要素**: $G(s) = K$\n*   **1次遅れ要素**: $G(s) = \\frac{K}{Ts + 1}$ （$T$: 時定数、$K$: ゲイン）\n    *   *例: RC直列回路のコンデンサ電圧* $G(s) = \\frac{1}{RCs + 1}$\n*   **2次遅れ要素**: $G(s) = \\frac{K\\omega_n^2}{s^2 + 2\\zeta\\omega_ns + \\omega_n^2}$\n    *   $K$: ゲイン、 $\\zeta$: 減衰係数、 $\\omega_n$: 自然角周波数\n    *   *例: 質量-ばね-ダンパ系* $G(s) = \\frac{1}{Ms^2 + Ds + k}$\n*   **むだ時間要素**: $G(s) = e^{-Ls}$ （$L$: むだ時間。$y(t)=u(t-L)$ をラプラス変換すると $e^{-Ls}U(s)$ となることから導かれる）\n    *   *例: 水路の流量* 流入量 $u(t)$、流出量 $y(t)=u(t-L)$、$L=l/v$（$l$: 長さ、$v$: 流速）\n    *   **パデ近似**（有理関数近似）: 1次 $e^{-Ls} \\approx \\dfrac{1-Ls/2}{1+Ls/2}$、2次 $e^{-Ls} \\approx \\dfrac{1-Ls/2+L^2s^2/12}{1+Ls/2+L^2s^2/12}$\n\n---\n\n## 3. ブロック線図の結合と等価変換\n*   **基本要素**: 矢印付き線分（信号の流れ。向きが伝達方向）、ブロック（伝達関数 $G(s)$ を乗じる）、**加え合わせ点**（信号の加減算）、**引き出し点**（信号の分岐点）。\n*   **直列結合**: $G(s) = G_1(s)G_2(s)$ （ブロックの順序を入れ替えても結果は同じ）\n*   **並列結合**: $G(s) = G_1(s) \\pm G_2(s)$\n*   **フィードバック結合**:\n    $$G_{total}(s) = \\frac{G_1(s)}{1 \\pm G_1(s)G_2(s)}$$\n    偏差 $e(s)=u(s) \\mp y(s)G_2(s)$、$y(s)=G_1(s)e(s)$ から導かれる。**ネガティブフィードバック**（負帰還、$-$）の場合が $G_{total}(s)=\\dfrac{G_1(s)}{1+G_1(s)G_2(s)}$。\n*   **等価変換のポイント**:\n    *   引き出し点や加え合わせ点をブロックの前後に移動させる際、伝達関数 $G$ または $1/G$ を掛けて信号の整合性を保つ。\n    *   ブロックと加え合わせ点の入れ替え: $(u_1(s)+u_2(s))G(s) = u_1(s)G(s)+u_2(s)G(s)$\n    *   ブロックと引き出し点の入れ替え: 分岐点をブロックの前段に移すときは $G(s)$ または $1/G(s)$ を掛ける。\n\n---\n\n## 4. ダイナミカルシステムの過渡応答\n\n### 4.1 テスト信号と応答の定義\n*   **インパルス関数 $\\delta(t)$**: $t=0$でのみ値を持つ関数（ディラックのデルタ関数）。性質: $\\int_{-\\infty}^\\infty \\delta(t)dt=1$、$\\int_{-\\infty}^\\infty f(t)\\delta(t)dt=f(0)$、$\\mathcal{L}[\\delta(t)] = 1$\n*   **ステップ関数 $u_s(t)$**: $t<0$で$0$、$t\\geq0$で$1$となる関数。$\\mathcal{L}[u_s(t)] = \\frac{1}{s}$\n*   **インパルス応答 $g(t)$**: $\\delta(t)$を入力したときの応答。$y(s)=G(s)\\cdot 1=G(s)$ より $g(t)=\\mathcal{L}^{-1}[G(s)]$（**重み関数**とも呼ぶ）。\n*   **ステップ応答**: $u_s(t)$を入力したときの応答。$Y(s) = G(s) \\frac{1}{s}$ を逆ラプラス変換した $y(t)$。\n*   その他のテスト信号: ランプ関数、指数関数、正弦波関数など。\n\n### 4.2 1次系の応答\n$$G(s) = \\frac{K}{Ts + 1}$$\n*   **インパルス応答**: $g(t) = \\frac{K}{T}e^{-t/T}$ （初期値 $\\frac{K}{T}$、定常値 $0$）\n*   **ステップ応答式**: $y(t) = K(1 - e^{-t/T})$ （インパルス応答の積分: $y(t)=\\int_0^t g(\\tau)d\\tau$）\n*   **定常値**: $K$\n*   **時定数 $T$**: 定常値の約 **63.2%** ($1 - e^{-1}$) に達するまでの時間。応答速度の指標（$T$が大きいほど応答は遅い）。\n*   **初期速度**: $y'(0)=\\frac{K}{T}$\n\n### 4.3 2次系の応答\n$$G(s) = \\frac{K\\omega_n^2}{s^2 + 2\\zeta\\omega_ns + \\omega_n^2}$$\n分母 $=0$ の根（極）は $s=\\omega_n(-\\zeta\\pm\\sqrt{1-\\zeta^2})$（$0\\le\\zeta<1$: 複素根）、$s=-\\omega_n$（$\\zeta=1$: 重根）、$s=\\omega_n(-\\zeta\\pm\\sqrt{\\zeta^2-1})$（$\\zeta>1$: 異なる実根）。$\\alpha=\\omega_n(\\zeta-\\sqrt{\\zeta^2-1})$、$\\beta=\\omega_n(\\zeta+\\sqrt{\\zeta^2-1})$ とおく。\n\n*   **$0 \\le \\zeta < 1$ (不足制動 / 振動的)**: 複素極を持つ。オーバーシュートが生じる。\n    *   インパルス応答: $g(t)=\\dfrac{K\\omega_n}{\\sqrt{1-\\zeta^2}}e^{-\\zeta\\omega_n t}\\sin(\\sqrt{1-\\zeta^2}\\,\\omega_n t)$\n    *   ステップ応答: $y(t)=K\\left\\{1-\\dfrac{e^{-\\zeta\\omega_n t}}{\\sqrt{1-\\zeta^2}}\\sin(\\sqrt{1-\\zeta^2}\\,\\omega_n t+\\theta)\\right\\}$、$\\theta=\\tan^{-1}\\dfrac{\\sqrt{1-\\zeta^2}}{\\zeta}$\n*   **$\\zeta = 1$ (臨界制動)**: 実数重根 $s=-\\omega_n$ を持つ。\n    *   インパルス応答: $g(t)=K\\omega_n^2\\, t\\, e^{-\\omega_n t}$\n    *   ステップ応答: $y(t)=K\\{1-e^{-\\omega_n t}(1+\\omega_n t)\\}$\n*   **$\\zeta > 1$ (過制動 / 非振動的)**: 異なる実数根 $-\\alpha,-\\beta$ を持つ。ヘビサイドの展開公式で部分分数展開して求める。\n    *   インパルス応答: $g(t)=\\dfrac{K\\omega_n^2}{\\beta-\\alpha}(e^{-\\alpha t}-e^{-\\beta t})$\n*   いずれの場合も**定常値は $K$**（ステップ応答）／$0$（インパルス応答）。$\\omega_n$ が大きいほど応答は速く、$\\zeta$ が小さいほど振動・オーバーシュートが大きい。\n\n### 4.4 ステップ応答の特性値\n*   **立ち上がり時間 ($T_r$)**: 定常値の10%から90%になるまでの時間。\n*   **遅れ時間 ($T_d$)**: 定常値の50%になるまでの時間。\n*   **整定時間 ($T_s$)**: 定常値の±2%（または5%）に収まるまでの時間。\n*   **オーバーシュート ($A_{max}$)**: 定常値を超えた最大の行き過ぎ量。\n\n---\n\n## 5. 極・零点とシステムの安定性\n\n### 5.1 極と零点\n*   **伝達関数**: $G(s) = \\frac{\\text{分子多項式}}{\\text{分母多項式}}$\n*   **極 (Pole)**: 分母多項式 $= 0$ の根。システムの応答特性（安定性、振動数、減衰スピード）を決定する。\n*   **零点 (Zero)**: 分子多項式 $= 0$ の根。\n*   **ステップ応答の一般式**: 極を実数極 $-\\sigma_1,\\dots,-\\sigma_M$、複素極 $-\\sigma_1\\pm j\\omega_1,\\dots,-\\sigma_N\\pm j\\omega_N$ とすると、ヘビサイドの展開公式により\n    $$y(t) = A_0 + \\sum_{j=1}^{M} A_j e^{-\\sigma_j t} + \\sum_{i=1}^{N} D_i e^{-\\sigma_i t}\\sin(\\omega_i t + \\phi_i)$$\n    *   極の実部 $-\\sigma$ が**負（左半面、$\\sigma>0$）→ 収束（安定）**、**正（右半面、$\\sigma<0$）→ 発散（不安定）**。\n    *   虚軸に近い極ほど**応答が遅い**、虚軸から離れた極ほど**速い**。\n    *   複素極（虚部 $\\neq 0$）→ **振動的**応答、実軸上の極（虚部 $=0$）→ **非振動的**応答。\n*   **代表極**: 実部の絶対値 $|\\sigma_j|$ が最も小さい（虚軸に最も近い）極。対応する項 $e^{-\\sigma_j t}$（または$\\sin$項）の減衰が最も遅いため、過渡応答に最も支配的な影響を与える。\n*   **零点が応答に及ぼす影響**: 例 $G(s)=\\dfrac{as+1}{(s+1)(2s+1)}$（極: $-1,-0.5$、零点: $-1/a$）のステップ応答において、\n    *   $a>0$ かつ小さい → 応答への影響は小さい。\n    *   $a>0$ かつ大きい → **オーバーシュートが大きくなる**。\n    *   $a<0$（零点が右半面）→ 入力と逆方向に最初動く**「逆ぶれ」**（非最小位相応答）を生じさせる。\n\n### 5.2 システムの安定性\n*   **安定の定義 (BIBO安定)**: 入力 $u(t)$ が有限であれば出力 $y(t)$ も有限であること。\n*   **安定の必要十分条件**: **「すべての極の実部が負」**であること（複素平面の左半平面に極が存在する）。5.1のステップ応答一般式の $e^{-\\sigma_j t}$ 項がすべて $0$ に収束する条件と一致する。\n*   １つでも実部が正の極があれば、対応する項が発散し、システムは**不安定**となる。\n\n### 5.3 ラウスの安定判別法\n特性方程式（分母多項式） $a_n s^n + a_{n-1} s^{n-1} + \\dots + a_1 s + a_0 = 0$ が与えられたとき：\n1.  **必要条件**: すべての係数 $a_i$ が同符号（通常は正）であり、欠けている項がないこと。\n2.  **ラウス表の作成**:\n    $$\n    \\begin{array}{c|ccc}\n    s^n & a_n & a_{n-2} & a_{n-4} \\\\\n    s^{n-1} & a_{n-1} & a_{n-3} & a_{n-5} \\\\\n    s^{n-2} & r_{1,1} & r_{1,2} & \\dots \\\\\n    \\vdots & \\vdots & &\n    \\end{array}\n    $$\n    *   計算規則: $r_{1,1} = \\frac{a_{n-1}a_{n-2} - a_n a_{n-3}}{a_{n-1}}$ (たすき掛けの符号反転)\n3.  **判別**: ラウス表の**第1列目の要素がすべて正**であればシステムは安定。\n4.  **不安定極数**: 第1列目の要素の符号変化の回数が、実部が正の極（不安定極）の数に等しい。\n", "prob": "# 制御の基礎 問題集（重要問題セレクション）\n\n本問題集は `制御の基礎_テスト対策ノート.md` の重要トピックから、試験で問われやすい計算・判定問題を厳選したものです。\nまず問題編だけを見て自力で解き、その後「解答・解説」で確認してください。\n\n---\n\n## 問題編\n\n### 問1（ラプラス逆変換・部分分数展開）\n$$ F(s) = \\frac{3s+5}{(s+1)(s+3)} $$\nヘビサイドの展開公式を用いて部分分数展開し、$f(t)=\\mathcal{L}^{-1}[F(s)]$ を求めよ。\n\n### 問2（ブロック線図のフィードバック結合）\n1次遅れ要素 $G_1(s)=\\dfrac{9}{s+1}$ に単位フィードバック（$G_2(s)=1$、ネガティブフィードバック）をかけた閉ループ系の伝達関数 $G_{total}(s)$ を求め、それを $\\dfrac{K'}{T's+1}$ の形に整理して、ゲイン $K'$ と時定数 $T'$ を求めよ。\n\n### 問3（1次系のステップ応答と時定数）\n$R=10\\,\\text{k}\\Omega$、$C=100\\,\\mu\\text{F}$ のRC直列回路（伝達関数 $G(s)=\\dfrac{1}{RCs+1}$）に振幅 $5\\,\\text{V}$ のステップ入力を加える。\n1. 時定数 $T$ を求めよ。\n2. $t=T$ における出力電圧 $y(T)$ を求めよ。\n\n### 問4（2次系の極と過渡応答の性質）\n2次遅れ要素 $G(s)=\\dfrac{\\omega_n^2}{s^2+2\\zeta\\omega_n s+\\omega_n^2}$ について、$\\omega_n=10\\,\\text{rad/s}$、$\\zeta=0.5$ とする。\n1. この系の極（複素根）を求めよ。\n2. ステップ応答は振動的か非振動的か。オーバーシュートは生じるか。理由とともに答えよ。\n\n### 問5（極の配置とBIBO安定性）\n伝達関数 $G(s)=\\dfrac{10}{(s+2)(s-1)(s+5)}$ の極をすべて求め、このシステムが安定か不安定かを判定せよ。\n\n### 問6（ラウスの安定判別法）\n特性方程式 $s^3+2s^2+3s+10=0$ について、ラウスの安定判別法を用いて安定性を判定し、不安定の場合は不安定極（実部が正の極）の数を答えよ。\n\n---\n---\n\n## 解答・解説編\n\n### 問1 解答\n$F(s)=\\dfrac{c_1}{s+1}+\\dfrac{c_2}{s+3}$ とおく。ヘビサイドの公式 $c_i=[(s-p_i)F(s)]_{s=p_i}$ より、\n\n$$ c_1=\\left.\\frac{3s+5}{s+3}\\right|_{s=-1}=\\frac{-3+5}{2}=\\frac{2}{2}=1 $$\n\n$$ c_2=\\left.\\frac{3s+5}{s+1}\\right|_{s=-3}=\\frac{-9+5}{-2}=\\frac{-4}{-2}=2 $$\n\nよって $F(s)=\\dfrac{1}{s+1}+\\dfrac{2}{s+3}$\n\n各項を $\\dfrac{c_i}{s-p_i}\\to c_ie^{p_it}$ の対応で逆変換すると、\n\n$$ f(t)=e^{-t}+2e^{-3t} $$\n\n---\n\n### 問2 解答\nネガティブフィードバックの式 $G_{total}(s)=\\dfrac{G_1(s)}{1+G_1(s)G_2(s)}$ に $G_1(s)=\\dfrac{9}{s+1}$、$G_2(s)=1$ を代入する。\n\n$$ G_{total}(s)=\\frac{\\dfrac{9}{s+1}}{1+\\dfrac{9}{s+1}}=\\frac{9}{(s+1)+9}=\\frac{9}{s+10} $$\n\nこれを $\\dfrac{K'}{T's+1}$ の形に整理するため、分母分子を10で割る。\n\n$$ G_{total}(s)=\\frac{9/10}{\\frac{1}{10}s+1}=\\frac{0.9}{0.1s+1} $$\n\nよって **$K'=0.9$、$T'=0.1$**。\n\n→ フィードバックをかけることで、もとの $G_1(s)$（ゲイン9、時定数1）に対し、閉ループ系のゲインは1に近づき（$0.9$）、時定数は大幅に短く（$1\\to0.1$）なる、つまり**応答が高速化**される（負帰還の効果）。\n\n---\n\n### 問3 解答\n1. 時定数:\n   $$ T=RC=10\\times10^3\\,\\Omega \\times100\\times10^{-6}\\,\\text{F}=1\\,\\text{s} $$\n\n2. 1次系のステップ応答は $y(t)=K(1-e^{-t/T})$（このRC回路では $K=1$ なので入力振幅5Vに対し $y(t)=5(1-e^{-t/T})$）。\n   $t=T$ のとき $e^{-t/T}=e^{-1}\\approx0.368$ なので、\n   $$ y(T)=5\\times(1-e^{-1})\\approx5\\times0.632\\approx3.16\\,\\text{V} $$\n\n   → 時定数 $T$ とは「定常値の約63.2%に達するまでの時間」であることが、この具体例で確認できる。\n\n---\n\n### 問4 解答\n1. $0\\leq\\zeta<1$ のときの極の公式 $s=\\omega_n(-\\zeta\\pm j\\sqrt{1-\\zeta^2})$ に $\\omega_n=10$、$\\zeta=0.5$ を代入する。\n\n   $\\sqrt{1-\\zeta^2}=\\sqrt{1-0.25}=\\sqrt{0.75}\\approx0.866$\n\n   $$ s=10(-0.5\\pm j0.866)=-5\\pm j8.66 $$\n\n2. $\\zeta=0.5$ は $0\\leq\\zeta<1$（不足制動）の範囲にあり、極は**複素極**（虚部 $\\neq0$）である。\n   - 複素極をもつ系のステップ応答は**振動的**になる。\n   - $0\\leq\\zeta<1$ の範囲では**オーバーシュートが生じる**（$\\zeta$ が小さいほどオーバーシュートは大きくなる）。\n\n   極の実部は $-5$（負）であるため、振動は時間とともに減衰し、最終的に定常値 $K$ へ収束する（安定）。\n\n---\n\n### 問5 解答\n$G(s)=\\dfrac{10}{(s+2)(s-1)(s+5)}$ の極（分母 $=0$ の根）は、\n\n$$ s=-2,\\quad s=1,\\quad s=-5 $$\n\n安定の必要十分条件は「**すべての極の実部が負**」であることだが、$s=1$ の極は実部が **正** である。\n\nしたがって、このシステムは**不安定**である（$s=1$ に対応する応答項 $e^{1\\cdot t}=e^{t}$ が時間とともに発散するため）。\n\n---\n\n### 問6 解答\n特性方程式 $1\\cdot s^3+2s^2+3s+10=0$ について、まず必要条件を確認すると、係数 $1,2,3,10$ はすべて正で欠落もないため、この条件はクリアしている（ただし安定性は保証されない）。\n\nラウス表を作成する。\n\n$$\n\\begin{array}{c|cc}\ns^3 & 1 & 3 \\\\\ns^2 & 2 & 10 \\\\\ns^1 & b_1 & 0 \\\\\ns^0 & c_1 &\n\\end{array}\n$$\n\n- $b_1=\\dfrac{a_2 a_1-a_3 a_0}{a_2}=\\dfrac{2\\times3-1\\times10}{2}=\\dfrac{6-10}{2}=-2$\n- $c_1=\\dfrac{b_1 a_0-a_2\\times0}{b_1}=a_0=10$\n\n第1列目を上から並べると $1,\\ 2,\\ -2,\\ 10$ となる。\n\n符号の変化を数えると、\n- $1\\to2$: 変化なし（正→正）\n- $2\\to-2$: **変化**（正→負）\n- $-2\\to10$: **変化**（負→正）\n\n合計**2回**の符号変化があるため、ラウスの安定判別法より**このシステムは不安定**であり、実部が正の極（不安定極）が**2個**存在する。\n"}, "電子デバイス": {"note": "# 電子デバイス テスト対策チートシート\n\n## 1. 半導体の基礎 (第1回)\n### 重要な公式・概念\n- **電気抵抗 $R$**: $R = \\rho \\frac{l}{S}$ ($\\rho$: 電気抵抗率, $l$: 長さ, $S$: 断面積)\n- **エネルギーの換算**: \n  - 電圧 $V$ をエネルギーに: $E = |e|V$ ($|e| = 1.602 \\times 10^{-19}$ J)\n  - 温度 $T$ をエネルギーに: $E = k_B T$ ($k_B = 1.38 \\times 10^{-23}$ J/K)\n- **半導体の種類**:\n  - **真性半導体 (i型)**: ドーピングなし\n  - **n型半導体**: 電子(負電荷)が多数キャリヤ。ドナーを添加。\n  - **p型半導体**: 正孔(ホール・正電荷)が多数キャリヤ。アクセプタを添加。\n\n### エネルギーバンドとフェルミ準位\n- **真性半導体**: フェルミ準位 $E_F$ は禁制帯のほぼ中央。\n- **n型半導体**: フェルミ準位 $E_F$ は伝導帯に近い。伝導帯に電子が存在。\n- **p型半導体**: フェルミ準位 $E_F$ は価電子帯に近い。価電子帯に正孔が存在。\n\n### フェルミ分布関数\n- **定義**: 電子が存在する確率を表す関数。\n- **公式**: $f(E, T, E_F) = \\frac{1}{1 + \\exp\\left[\\frac{E-E_F}{k_B T}\\right]}$\n- **特徴**: $E = E_F$ のとき確率 $f = 0.5$。絶対零度 (0K) では階段関数となり、温度が上昇するとフェルミ準位付近でなまる。\n\n---\n\n## 2. pn接合 (第2〜3回)\n### キャリヤの運動過程\n- **ドリフト運動**: 電界 $\\vec{E}$ によって生じる運動。ドリフト速度 $v = \\mu E$ ($\\mu$: 移動度)。\n- **拡散運動**: キャリヤの濃度差を一様にしようとする運動。電界がなくても発生。\n  - 拡散電流密度: $j_{diff} = qD\\left(-\\dfrac{\\partial n}{\\partial x}\\right)$ ($D$: 拡散係数)。\n- **電気伝導率**: $\\sigma = e(n\\mu_e + p\\mu_h)$ （抵抗率 $\\rho = 1/\\sigma$ から $R=\\rho l/S$ を求める練習問題に使う）。\n- **連続の式（電荷保存則）**: $\\dfrac{\\partial \\rho}{\\partial t} + \\nabla \\cdot \\vec{j} = 0$\n  - pn接合では生成・再結合項を含む形になる。**キャリヤ生成**（例: 太陽電池での光吸収）と**再結合**（例: LEDでの発光）。\n\n### pn接合の原理\n- **接合直後**: n型からp型へ電子が、p型からn型へ正孔が拡散運動する。\n- **定常状態**: 接合界面付近で電子と正孔が再結合し、**空乏層**（キャリヤの少ない領域）が形成される。\n  - n型領域は電子不足により**正電荷（ドナーイオン）過剰**。\n  - p型領域は正孔不足により**負電荷（アクセプタイオン）過剰**。\n- **エネルギーバンド**: pn接合すると、両側の**フェルミ準位が一致**するようバンドが曲がる。\n- **ダイオードの端子名（覚え方）**: **アノード＝p型側**、**カソード＝n型側**。電流はアノード→カソード方向（p→n）に流れやすい。\n\n### 空乏層内の電界・電位の基礎方程式 (Gaussの法則)\n- **基礎方程式（Gaussの法則）**: $\\text{div}\\,E_x(x) = \\dfrac{\\rho(x)}{\\varepsilon}$\n- **電荷中性条件**: $N_A x_p = N_D x_n$ （$x_p$: p側空乏層幅, $x_n$: n側空乏層幅）\n- **電界分布 $E(x)$**（接合界面 $x=0$ で最大となる三角形分布）:\n  - p型領域 ($-x_p \\le x \\le 0$): $E_x(x) = -\\dfrac{qN_A}{\\varepsilon}(x+x_p)$\n  - n型領域 ($0 \\le x \\le x_n$): $E_x(x) = \\dfrac{qN_D}{\\varepsilon}(x-x_n)$\n  - $x=0$ で両式が一致する条件から $N_A x_p = N_D x_n$ が導かれる。\n- **電位分布 $\\phi(x)$**:\n  - $\\vec{E}(x) = -\\text{grad}\\,\\phi(x)$ （電界を積分し、$\\phi(0)=0$ を基準に求める）。\n  - p型領域: $\\phi(x) = \\dfrac{qN_A}{2\\varepsilon}(x+2x_p)x$\n  - n型領域: $\\phi(x) = \\dfrac{qN_D}{\\varepsilon}\\left(x_n x - \\dfrac{x^2}{2}\\right)$\n  - 内蔵電位差（ビルトインポテンシャル）: $V_0 = \\phi(x_n)-\\phi(-x_p) = \\dfrac{qN_D}{2\\varepsilon}x_n^2 + \\dfrac{qN_A}{2\\varepsilon}x_p^2$\n\n### pn接合の応用デバイス\n- **太陽電池**: 光照射で生成したキャリヤにより電流-電圧曲線が右回りになる。$V_{OC}$（解放電圧）・$I_{SC}$（短絡電流）が大きいほど高性能。\n- **光検出器（フォトダイオード）**: 太陽電池と同じ原理。検出波長は400〜1200nm程度（可視〜近赤外）。Si, GaAs, AlGaAsなどを使用。\n- **LED**: 電子と正孔の再結合により発光（再結合過程の利用）。\n\n---\n\n## 3. バイポーラトランジスタ (BJT) (第4〜5回)\n### 基本構造\n- **端子**: エミッタ (E)、ベース (B)、コレクタ (C)\n- **種類**: npn型、pnp型の2種類（ベースを中心にpn接合を2つ向かい合わせた構造）。\n- **特徴**: 「電流入力・電流制御」の素子（FETは「電圧入力・電流制御」）。\n- **端子配置の見分け方**: 文字が書いてある面を見ながら、左から **E-C-B**（または型番により異なるが、データシートで確認）。\n- **型式表記の例**: `2SC1740` → 種別(2: 端子数−1)、半導体(S)、用途(A:高周波pnp, B:高周波npn, C:低周波pnp, D:低周波npn, F:pチャネルFET, K:nチャネルFET)、登録番号、改良番号。\n\n### 動作原理 (npn型)\n- エミッタ-ベース間を順バイアス（ベースの電位を上げる＝壁（エネルギー障壁）を下げる）。\n- コレクタ-ベース間を逆バイアス。\n- ベース部分の壁の高さが下がると、エミッタ側から注入された電子がベース領域に容易に進入できる。\n- ベース領域は非常に薄いため、電子はベース領域中を拡散して通過する。\n- コレクタ側の電位を上げる（エネルギーバンドを下げる）と、電子はコレクタ側まで到達し、コレクタ電流が流れる。\n- ベース領域の「壁の高さ」を調整することで、大きなコレクタ電流を制御する。\n\n### 電流増幅率とV-I特性\n- **電流増幅率 $\\beta$**: $i_C \\simeq \\beta i_B$ （$\\beta \\approx 10 \\sim 100$）。小さなベース電流の変化で、大きなコレクタ電流の変化を制御できる。\n- **ベース-エミッタ間はpn接合**: ダイオードと同様の電流-電圧特性を示す。\n  $$i_B = I_s\\left(\\exp\\left(\\dfrac{qV_{BE}}{k_BT}\\right)-1\\right)$$\n- **動作特性のまとめ（4象限図）**:\n  - 第一象限: $I_C$-$V_{CE}$特性（飽和領域・活性領域）\n  - 第二象限: $I_C$-$I_B$特性（傾き $\\approx \\beta$ の直線）\n  - 第三象限: $I_B$-$V_{BE}$特性（ダイオード特性）\n\n### 信号増幅回路（基本）\n- **負荷線**: $V_{CC} = I_C R_L + V_{CE}$\n- **反転増幅回路**: ベースに交流信号 $v_{in}$ を入力すると、コレクタ出力 $v_{out}$ は**位相が反転**して増幅される。\n\n---\n\n## 4. 電界効果型トランジスタ (MOSFET) (第7回)\n### 基本構造と種類\n- **端子**: ソース (S)、ドレイン (D)、ゲート (G)\n- **特徴**: 「電圧入力・電流制御」の素子（BJTは「電流入力・電流制御」）。\n- **MOS構造**: Metal(金属)-Oxide(酸化膜)-Semiconductor(半導体)。ゲート電極/SiO₂(絶縁体)/Si(半導体)の積層構造。\n- **基板電極 (Substrate)**: ソース電極と接続されていることが多い。\n\n### nMOS と pMOS の構造\n- **nMOS**: ソース・ドレインが n型半導体、基板が p型半導体。\n- **pMOS**: ソース・ドレインが p型半導体、基板が n型半導体。\n- ゲート部分の拡大図: 金属(Gate) / SiO₂(酸化膜・絶縁体) / Si(半導体) の3層構造。\n\n### 回路記号\n- 矢印はいつもソース電極側につく。\n- **nMOS**: 矢印の向きは「p → n」（基板からソースへ向く）。\n- **pMOS**: 矢印の向きは「n → p」。\n- ほかにもMOSFETの記号には多くの種類がある。\n\n### ゲート付近の3つの電子状態 (nMOSFETの場合)\n| ゲート電圧 $V_G$ | 状態 | 説明 |\n|---|---|---|\n| $V_G < 0$ | 基底状態 | チャネル無し |\n| $V_G > 0$ | 空乏状態 | p型領域の正孔が押し出され空乏層が広がる |\n| $V_G \\gg 0$ | 反転状態 | ゲート直下に電子が集まり **n反転層（チャネル）** が形成 |\n\n### nMOS と pMOS の動作・ON/OFF条件\n- **nMOS**:\n  - ゲートに**正の高電圧 (High)** を印加すると、電子の**反転層 (nチャネル)** が形成され、ソース-ドレイン間に電子が流れて **ON**。\n  - ゲート電圧を切る（Low）と反転層が消え **OFF**。\n- **pMOS**:\n  - ゲートに**低電圧 (Low)** を印加すると、正孔の**反転層 (pチャネル)** が形成され **ON**。\n  - ゲート電圧が高い (High) と **OFF**。\n- **相補的(Complementary)な関係**: nMOSはゲート電圧が高いほど電流が増加し、pMOSは低いほど電流が増加する、鏡に映したような対称関係（→ CMOSの基礎）。\n\n### エンハンスメント型 と ディプリーション型\n- **エンハンスメント型**: ゲート電圧無し（0V）→ チャネル無しで **OFF**（ノーマリーオフ）。ゲート電圧を加えると反転層が形成されON。\n- **ディプリーション型**: 構造上もともとチャネルが存在し、ゲート電圧無しで **ON**（ノーマリーオン）。$V_G<0$ にすると空乏層が広がりチャネルが狭まりOFFに近づく。\n\n---\n\n## 5. MOSFET(2) + CMOSインバータ (第8回)\n※ 「CMOS論理回路」の本格的な展開（NAND/NORなど）は第9〜12回で扱われるが、本資料は第8回までの内容が範囲。\n\n### インバータ (NOT回路)\n- インバータは論理否定 (NOT) の機能を持つ。\n- **NOT回路の真理値表**:\n\n| $V_{in}$ | $V_{out}$ |\n|---|---|\n| 0 (Low) | 1 (High) |\n| 1 (High) | 0 (Low) |\n\n### CMOSインバータ\n- **構成**: pMOS と nMOS を相補的に組み合わせた回路。\n  - ゲートどうしを接続して入力 ($V_{in}$)、ドレインどうしを接続して出力 ($V_{out}$)。\n  - pMOSのソースに電源電圧 $V_{DD}$ を印加。nMOSのソースを接地。\n- **動作（真理値）**:\n  - $V_{in} = \\text{Low (0V)}$ のとき: pMOSはON、nMOSはOFF $\\to$ $V_{out} = \\text{High (VDD)}$\n  - $V_{in} = \\text{High (VDD)}$ のとき: pMOSはOFF、nMOSはON $\\to$ $V_{out} = \\text{Low (0V)}$\n- **特徴**:\n  - 定常状態では、常にどちらかのトランジスタがOFFになるため、VDDから接地への貫通電流が流れず、**消費電力が非常に小さい**。\n  - Hi/Loの切り替わり時にのみ貫通電流が流れる（入出力特性のグラフでHigh/Lowの切り替わり付近に急峻な遷移が現れる）。\n- **実際の構造**: p型半導体基板上に局所的に不純物をドープしてn領域を形成する。\n", "prob": "# 電子デバイス 問題集（重要問題セレクション）\n\n本問題集は `電子デバイス_テスト対策ノート.md` の重要トピックから、試験で問われやすい計算・判定問題を厳選したものです。\nまず問題編だけを見て自力で解き、その後「解答・解説」で確認してください。\n\n---\n\n## 問題編\n\n### 問1（フェルミ分布関数）\n温度 $T=300\\,\\text{K}$ において、あるエネルギー $E$ がフェルミ準位 $E_F$ より $0.1\\,\\text{eV}$ 高い（$E-E_F=0.1\\,\\text{eV}$）とき、フェルミ分布関数 $f(E)$ の値を求めよ。\n（ヒント: $1\\,\\text{eV}=1.16045\\times10^4\\,\\text{K}$ を用いて $k_BT$ を eV 単位で求める。）\n\n### 問2（電気伝導率と抵抗）\nあるn型半導体において、電子密度 $n=1\\times10^{16}\\,\\text{cm}^{-3}$、電子移動度 $\\mu_e=1000\\,\\text{cm}^2/(\\text{V}\\cdot\\text{s})$ とし、正孔の寄与は無視できるとする。\n1. 電気伝導率 $\\sigma$ と抵抗率 $\\rho$ を求めよ。\n2. この半導体を長さ $l=0.1\\,\\text{cm}$、断面積 $S=1\\times10^{-4}\\,\\text{cm}^2$ の棒状に加工したときの電気抵抗 $R$ を求めよ。\n\n### 問3（pn接合：空乏層幅と電荷中性条件）\npn接合において、p型領域のアクセプタ密度 $N_A=2\\times10^{16}\\,\\text{cm}^{-3}$、n型領域のドナー密度 $N_D=1\\times10^{16}\\,\\text{cm}^{-3}$ であり、n側の空乏層幅 $x_n=0.2\\,\\mu\\text{m}$ であるとする。\n1. 電荷中性条件 $N_Ax_p=N_Dx_n$ を用いて、p側の空乏層幅 $x_p$ を求めよ。\n2. 全空乏層幅 $W=x_p+x_n$ を求めよ。\n3. ドープ濃度の高い側・低い側で空乏層幅にどのような違いが生じるか、定性的に述べよ。\n\n### 問4（BJTの負荷線と動作点）\nnpn型BJT回路において $V_{CC}=10\\,\\text{V}$、負荷抵抗 $R_L=1\\,\\text{k}\\Omega$、電流増幅率 $\\beta=100$ とする。\n1. ベース電流 $I_B=0.05\\,\\text{mA}$ のとき、コレクタ電流 $I_C$ とコレクタ-エミッタ間電圧 $V_{CE}$ を求めよ。この動作点は活性領域にあるか確認せよ。\n2. ベース電流が $I_B=0.15\\,\\text{mA}$ まで増えた場合、$I_C=\\beta I_B$ をそのまま適用すると不合理な結果になることを示し、実際にこのトランジスタがどのような状態になるか説明せよ。\n\n### 問5（MOSFETの状態判定）\n基板がp型のnMOSFET（しきい値電圧 $V_{th}=+2\\,\\text{V}$）について、ゲート電圧 $V_G$ が (a) $-2\\,\\text{V}$、(b) $+1\\,\\text{V}$、(c) $+5\\,\\text{V}$ のそれぞれの場合に、ゲート下の状態（基底状態・空乏状態・反転状態）と、ソース-ドレイン間が ON / OFF のどちらになるかを答えよ。\n\n### 問6（CMOSインバータの動作と低消費電力性）\n$V_{DD}=5\\,\\text{V}$ のCMOSインバータについて、\n1. $V_{in}=0\\,\\text{V}$ および $V_{in}=5\\,\\text{V}$ のときの pMOS・nMOS のON/OFF状態と、出力電圧 $V_{out}$ をそれぞれ求めよ。\n2. CMOSインバータが定常状態で消費電力が非常に小さい理由を述べよ。\n3. $V_{in}$ が $0\\,\\text{V}$ から $5\\,\\text{V}$ へ遷移する過渡的な中間電圧の領域では何が起こるか述べよ。\n\n---\n---\n\n## 解答・解説編\n\n### 問1 解答\nまず $k_BT$ を eV 単位で求める。$1\\,\\text{eV}=1.16045\\times10^4\\,\\text{K}$ より、\n\n$$ k_BT\\,[\\text{eV}] = \\frac{T}{1.16045\\times10^4} = \\frac{300}{11604.5} \\approx 0.02585\\,\\text{eV} $$\n\nフェルミ分布関数 $f(E,T,E_F)=\\dfrac{1}{1+\\exp\\left[\\dfrac{E-E_F}{k_BT}\\right]}$ に $E-E_F=0.1\\,\\text{eV}$ を代入すると、\n\n$$ \\frac{E-E_F}{k_BT}=\\frac{0.1}{0.02585}\\approx3.87 $$\n\n$$ f(E)=\\frac{1}{1+e^{3.87}}\\approx\\frac{1}{1+47.9}\\approx\\frac{1}{48.9}\\approx0.0205 $$\n\n→ フェルミ準位より $k_BT$ の約4倍高いエネルギー準位には、電子が存在する確率はわずか約2%しかない（$E=E_F$ でちょうど50%になる定義と対比すると理解しやすい）。\n\n---\n\n### 問2 解答\n1. 電気伝導率: $\\sigma=e(n\\mu_e+p\\mu_h)$ で $p\\mu_h$ を無視すると、\n\n   $$ \\sigma=en\\mu_e=1.602\\times10^{-19}\\times1\\times10^{16}\\times1000\\approx1.602\\,\\text{S/cm} $$\n\n   抵抗率:\n   $$ \\rho=\\frac{1}{\\sigma}\\approx0.624\\,\\Omega\\cdot\\text{cm} $$\n\n2. $R=\\rho\\dfrac{l}{S}$ より、\n\n   $$ R\\approx0.624\\,\\Omega\\cdot\\text{cm}\\times\\frac{0.1\\,\\text{cm}}{1\\times10^{-4}\\,\\text{cm}^2}=0.624\\times1000\\,\\Omega\\approx624\\,\\Omega $$\n\n---\n\n### 問3 解答\n1. 電荷中性条件 $N_Ax_p=N_Dx_n$ より、\n\n   $$ x_p=\\frac{N_D}{N_A}x_n=\\frac{1\\times10^{16}}{2\\times10^{16}}\\times0.2\\,\\mu\\text{m}=\\frac{1}{2}\\times0.2\\,\\mu\\text{m}=0.1\\,\\mu\\text{m} $$\n\n2. $$ W=x_p+x_n=0.1+0.2=0.3\\,\\mu\\text{m} $$\n\n3. 本問では $N_A=2N_D$（p側のドープ濃度がn側の2倍）であり、対応して $x_p=\\dfrac{1}{2}x_n$（p側の空乏層幅はn側の半分）となっている。\n   一般に、**ドープ濃度が高い側ほど空乏層幅は狭く**、**ドープ濃度が低い側ほど空乏層幅は広くなる**。これは、空乏層内の正味の電荷量（ドナー/アクセプタイオン密度×幅）が両側で等しくなる（電荷中性条件）必要があるためである。\n\n---\n\n### 問4 解答\n1. $$ I_C=\\beta I_B=100\\times0.05\\,\\text{mA}=5\\,\\text{mA} $$\n\n   負荷線の式 $V_{CC}=I_CR_L+V_{CE}$ より、\n\n   $$ V_{CE}=V_{CC}-I_CR_L=10\\,\\text{V}-(5\\times10^{-3}\\,\\text{A})\\times(1\\times10^3\\,\\Omega)=10-5=5\\,\\text{V} $$\n\n   $0<V_{CE}<V_{CC}$（$0\\,\\text{V}<5\\,\\text{V}<10\\,\\text{V}$）を満たしているため、この動作点は**活性領域**にあり、正常に増幅動作できる。\n\n2. $I_C=\\beta I_B=100\\times0.15\\,\\text{mA}=15\\,\\text{mA}$ をそのまま負荷線の式に代入すると、\n\n   $$ V_{CE}=10\\,\\text{V}-(15\\times10^{-3}\\,\\text{A})\\times(1\\times10^3\\,\\Omega)=10-15=-5\\,\\text{V} $$\n\n   $V_{CE}<0$ という物理的にあり得ない結果になる。これは「$I_C=\\beta I_B$」の関係が**活性領域でのみ有効**であり、実際には $V_{CE}$ が負になる前に $V_{CE}\\approx0$（飽和電圧 $V_{CE(sat)}$）で頭打ちになるためである。\n\n   このとき負荷線上で取り得る最大のコレクタ電流は、$V_{CE}=0$ とした\n   $$ I_{C(\\max)}=\\frac{V_{CC}}{R_L}=\\frac{10\\,\\text{V}}{1\\,\\text{k}\\Omega}=10\\,\\text{mA} $$\n   に制限される。つまり、トランジスタは**飽和領域**に入り、$I_C\\approx10\\,\\text{mA}$（$\\beta I_B=15\\,\\text{mA}$ より小さい値）、$V_{CE}\\approx0\\,\\text{V}$（実際には数百mV程度の飽和電圧）で動作する。\n\n---\n\n### 問5 解答\n| $V_G$ | ゲート下の状態 | ON/OFF |\n|---|---|---|\n| (a) $-2\\,\\text{V}$（$<0$） | **基底状態**（チャネルなし） | **OFF** |\n| (b) $+1\\,\\text{V}$（$0<V_G<V_{th}$） | **空乏状態**（p型領域の正孔が押し出されるが、反転層はまだ形成されない） | **OFF** |\n| (c) $+5\\,\\text{V}$（$V_G>V_{th}$） | **反転状態**（ゲート直下にn反転層＝チャネルが形成される） | **ON** |\n\n→ nMOSFETは $V_G$ がしきい値電圧 $V_{th}$ を超えたとき（(c)の場合）にのみ、ソース-ドレイン間に電子の通り道（チャネル）が形成され、電流が流れるようになる。(b)のように $0<V_G<V_{th}$ では空乏層が広がるだけでチャネルは形成されず、依然としてOFFのままである点に注意。\n\n---\n\n### 問6 解答\n1. | $V_{in}$ | pMOS | nMOS | $V_{out}$ |\n   |---|---|---|---|\n   | $0\\,\\text{V}$（Low） | ON | OFF | $V_{DD}=5\\,\\text{V}$（High） |\n   | $5\\,\\text{V}$（High） | OFF | ON | $0\\,\\text{V}$（Low） |\n\n   いずれの場合も、出力は $V_{DD}$ または接地のいずれか一方に確実に接続され、論理否定（NOT）の動作をする。\n\n2. 定常状態では、$V_{in}=0\\,\\text{V}$ のとき nMOS がOFF、$V_{in}=5\\,\\text{V}$ のとき pMOS がOFFとなり、**pMOSとnMOSの少なくとも一方が必ずOFF**になる。そのため、$V_{DD}$ から接地（GND）へ直接電流が流れ込む経路（貫通電流）が形成されず、静的な電力消費がほとんど発生しない。\n\n3. $V_{in}$ が $0\\,\\text{V}$ から $5\\,\\text{V}$ へ遷移する中間電圧の領域では、pMOSとnMOSの**両方が一時的にONとなる**期間が生じる。この間、$V_{DD}$ から接地へ向かう**貫通電流（スイッチング電流）**が流れ、これがCMOS回路における動的な電力消費（ダイナミック電力）の主要な要因となる。\n"}, "電気機器Ⅱ": {"note": "# 電気機器Ⅱ テスト対策チートシート\n\n## 1. 基礎概念：電気回路と磁気回路\n* **オームの法則の対比**:\n  * 電気回路: 電流 $I = \\frac{E}{R}$ [A], 抵抗 $R = \\frac{\\ell}{\\sigma S}$ [$\\Omega$]\n  * 磁気回路: 磁束 $\\Phi = \\frac{nI}{R_m}$ [Wb], 磁気抵抗 $R_m = \\frac{\\ell}{\\mu S}$ [A/Wb]\n  * 起磁力: $F = nI$ [A] ($n$: 巻数, $I$: 電流)\n  * 合成磁気抵抗: 直列の場合は $R = R_{m1} + R_{m2}$、並列の場合は $\\frac{1}{R} = \\frac{1}{R_{m1}} + \\frac{1}{R_{m2}}$\n\n## 2. 誘導電動機の原理と基本式\n* **アラゴの円板**: 移動する磁石（回転磁界）を導体（円板）が電磁誘導によって追いかけるように回転する原理。電磁誘導の式 $e = -N\\frac{d\\phi}{dt}$。\n* **回転磁界の同期速度 ($N_s$)**: 固定子の三相巻線が作る回転磁界の速度。\n  * $N_s = \\frac{120f}{P}$ $[min^{-1}]$ ($f$: 周波数[Hz], $P$: 極数)\n  * ※ 極対数 $p = \\frac{P}{2}$ とすると、同期角速度 $\\omega_s = \\frac{2\\pi N_s}{60}$\n* **電気角と機械角**: $\\theta(電気角) = p \\times \\theta_m(機械角)$\n* **すべり ($s$)**: 同期速度と実際の回転速度のズレの割合。\n  * $s = \\frac{N_s - N}{N_s}$ または $s(\\%) = \\frac{N_s - N}{N_s} \\times 100$\n  * 回転速度 $N = (1-s)N_s$\n  * 停止時: $s=1$, 同期速度（理想無負荷）時: $s=0$\n* **二次周波数**: 回転子に誘起される起電力の周波数 $f_2 = s \\cdot f$\n\n### 起磁力と誘導起電力\n* **回転磁界の作り方（起磁力）**: 固定子のU,V,W相に振幅が等しく位相が120°ずれた三相電流を流すと、各相が作る起磁力ベクトル $F_U, F_V, F_W$ も互いに120°ずれており、これらを合成すると一定の大きさで回転する起磁力（回転磁界）が得られる。\n  * 巻線の配置や電流波形によっては、基本波（$\\theta$）成分に加えて $3\\theta, 5\\theta, \\dots$ などの**高調波成分**の起磁力も発生する（→ 7章「高調波の影響」）。\n* **誘導起電力の実効値**: 1相分の誘導起電力 $E$ は、\n  $$E = 4.44 k_w f w \\phi$$\n  ($f$: 周波数, $w$: 1相あたりの巻数, $\\phi$: 1極あたりの磁束の最大値)\n  * **巻線係数**: $k_w = k_d k_p$\n    * $k_d$: 分布巻係数（巻線を複数スロットに分布させることによる係数）\n    * $k_p$: 短節巻係数（コイルピッチを極ピッチより短くすることによる係数）\n\n## 3. 誘導電動機の種類と構造\n* **固定子 (Stator)**: 一次巻線 (Primary winding)。\n* **回転子 (Rotor)**: 二次巻線 (Secondary winding)。\n* **鉄心の構造**: 渦電流損（うず電流損）を低減するため、厚さ0.35mmや0.5mm程度の無方向性ケイ素鋼板を積層して鉄心を作る。\n* かご形回転子は以下の種類に分類される（大分類: 普通かご形／特殊かご形）。\n  1. **普通かご形**: 構造が簡単で保守が容易、堅牢。広く普及。\n  2. **深溝かご形**（特殊かご形）: 始動時(二次周波数が高い時)の表皮効果を利用して漏れリアクタンスの小さいスロット上部に電流を集中させ、実効的な二次抵抗を大きくして始動トルクを向上。\n  3. **二重かご形**（特殊かご形）: 外側(高抵抗・低インダクタンス)と内側(低抵抗・高インダクタンス)の2段の導体を使用。始動時は外側、運転時は内側に電流が流れ、始動特性を改善。\n  4. **凸形**（特殊かご形）: 二次導体の断面形状を工夫したもの。\n  5. **巻線形**: 回転子も三相巻線。スリップリングとブラシを介して外部の三相可変抵抗器に接続可能。比例推移を利用した始動や速度制御が可能。\n\n## 4. 等価回路と諸特性\n### 等価回路（T形・L形）\n* **T形等価回路**: 一次側 $r_1+jx_1$ → 励磁回路（励磁アドミタンス $\\dot{Y}_0=g_0-jb_0$、励磁電流 $\\dot{I}_0$）→ 二次側 $\\frac{r_2}{s}+jx_2$ （$x=x_1+x_2$）。\n* **L形等価回路（簡易等価回路）**: 励磁アドミタンス $\\dot{Y}_0$ を $r_1+jx_1$ より電源側に移した近似回路。一次側における励磁電流 $\\dot{I}_0$ の電圧降下 $(r_1+jx_1)\\dot{I}_0$ を無視し、電源側に移した近似回路として計算を簡略化したもの。\n* **漏れリアクタンス $x$**: 歯端漏れ磁束・スロット漏れ磁束など、巻線の周囲に漏れる磁束に起因し、$x=x_1+x_2$。\n\n### 定数決定のための試験\n1. **抵抗測定試験**: 直流で一次抵抗 $r_1$ を測定し、基準巻線温度に換算。\n   * 絶縁の耐熱クラスごとの基準巻線温度 $T[°C]$: **A・E種 75℃, B種 95℃, F種 115℃, H種 130℃**。\n2. **無負荷試験 ($s \\approx 0$)**: 定格電圧・定格周波数で無負荷運転し、一次電圧 $V_0$・一次電流 $I_0$・入力電力 $P_0$ を測定。励磁アドミタンス $\\dot{Y}_0$（$g_0,b_0$）を求める。\n   * $P_0$ は鉄損 $P_i$ と機械損 $P_m$ の和。$P_0$ を $V_0^2$ に対してプロットし定格の110%程度から徐々に下げて$V_0=0$まで外挿すると、その切片が機械損 $P_m$、$P_0-P_m$ が鉄損 $P_i$ となる（両者を分離できる）。\n3. **拘束試験 ($s = 1$)**: 回転子を拘束（ほぼ同期速度を保つ最低限の電圧）し、定格電流程度が流れる低電圧 $V_0'$・電流 $I_0'$・入力電力 $P_0'$ を測定。漏れインピーダンス（$r_1+r_2$ や $x=x_1+x_2$）を求める。\n\n### 電力とトルクの公式\n* **二次入力 ($P_2$)**: 一次側からギャップを渡って回転子へ伝わる電力（同期ワット）。\n  * $P_2 = 3 \\frac{r_2}{s} I_2^2 = T\\omega_s$\n* **二次銅損 ($P_{c2}$)**: 回転子の巻線抵抗で消費される熱。\n  * $P_{c2} = 3 r_2 I_2^2 = sP_2$\n* **機械的出力 ($P$)**: 発生する機械的な動力（軸出力＋機械損）。\n  * $P = P_2 - P_{c2} = (1-s)P_2 = 3 r_2 \\frac{1-s}{s} I_2^2$\n  * **電力の比**: $P_2 : P_{c2} : P = 1 : s : (1-s)$\n* **パワーフロー**: 一次入力 → (一次銅損・鉄損で消費) → 二次入力 $P_2$ → (二次銅損 $P_{c2}$ で消費) → 機械的出力 $P$ → (機械損 $P_m$ で消費) → 軸出力（出力）$P_o$\n* **トルク ($T$)**: \n  * $T = \\frac{P_2}{\\omega_s} = \\frac{P}{\\omega_m} = \\frac{3}{\\omega_s} \\frac{r_2}{s} I_2^2$\n  * ※ トルクは電圧の2乗に比例する（$T \\propto V_1^2$）。\n\n### 速度トルク特性（T-s特性）\n* L形等価回路から、すべり $s$ における二次電流 $I_2$・トルク $T$ は、\n  $$I_2 = \\frac{V_1}{\\sqrt{\\left(r_1+\\frac{r_2}{s}\\right)^2+x^2}}, \\qquad T = \\frac{3r_2}{\\omega_s s}\\cdot\\frac{V_1^2}{\\left(r_1+\\frac{r_2}{s}\\right)^2+x^2}$$\n* **同期速度付近（$s$が小さい範囲）**: $\\frac{r_2}{s} \\gg r_1, x$ となるため、近似的に\n  $$T \\approx \\frac{3V_1^2}{\\omega_s r_2}s$$\n  すなわち、同期速度付近では**トルク $T$ はすべり $s$ にほぼ比例**し、T-s曲線は直線とみなせる。\n* **最大トルク**: $\\frac{dT}{ds}=0$ を解くと、\n  $$s_T = \\frac{r_2}{\\sqrt{r_1^2+x^2}}, \\qquad T_m = \\frac{3V_1^2}{2\\omega_s\\left(r_1+\\sqrt{r_1^2+x^2}\\right)}$$\n  * $s_T$（最大トルクを発生するすべり）は $r_2$ に**比例**する（→ 5章「比例推移」の根拠）。\n  * $T_m$ の式に $r_2$ を含まないため、**二次抵抗を変えても最大トルクの大きさは不変**。\n* **動作点と安定運転**: T-s曲線と負荷トルク曲線の交点が動作点。$s>s_T$（低速側）では速度が下がると加速トルク（電動機トルクー負荷トルク）が増加して動作点に戻る＝**安定**。$T_m$ を超える領域（$s<s_T$）では不安定となり、$T_m$ より大きい負荷トルクでは始動不可。\n* **始動時 ($s=1$)の電流・トルク**: 上式に $s=1$ を代入して始動電流 $I_s$・始動トルク $T_s$ を求める。\n\n## 5. 比例推移 (巻線形誘導電動機)\n* **原理**: トルク $T$、一次電流 $I_1$、力率 $\\cos \\phi$ 等は $\\frac{r_2}{s}$ の関数となる（4章の $T$ の式が $r_2$ と $s$ の比のみに依存することからも分かる）。\n* **特徴**: 二次抵抗 $r_2$ を変えても、$\\frac{r_2}{s}$ が一定であればトルクや電流は同じ値になる。\n  * つまり、二次抵抗を $n$ 倍にすると、同一トルクを発生するすべり $s$ も $n$ 倍になる。\n  * $\\frac{r_2}{s_1} = \\frac{r_2 + R_{ext}}{s_2}$ （$R_{ext}$: 挿入する二次1相あたりの外部抵抗）\n* **最大トルク**: 最大トルク $T_m$ の大きさは二次抵抗を変えても**不変**（$s_T=\\frac{r_2}{\\sqrt{r_1^2+x^2}}$ は $r_2$ に比例して移動するが $T_m$ は $r_2$ を含まない）。\n* **計算のコツ（典型問題）**:\n  * 「すべり $s_1$ のとき抵抗 $r_2$」→「すべり $s_2$（速度・トルク条件から指定）のとき挿入すべき外部抵抗 $R_{ext}$」を求める場合、上の比例式に既知の値を代入して $R_{ext}$ を解く。\n  * 「同期速度付近は直線」という近似（4章）を使えば、トルクが $k$ 倍になる条件のすべりは $s \\to ks$ と単純に比例計算できる（例: 全負荷トルクの2倍のトルクを発生させるすべり $s_2 = 2s_1$）。\n\n## 6. 始動法\n始動時($s=1$)は始動電流が大きく力率が低いため、これを制限する工夫が必要。\n### かご形誘導電動機の始動法\n1. **全電圧始動 (じか入れ)**: 小容量機(11kW未満)向け。定格の4〜6倍の始動電流が流れる。\n2. **スター・デルタ (Y-$\\Delta$) 始動**: \n   * 固定子巻線の結線を切り替える開閉器を用い、始動時はY結線、運転時に$\\Delta$結線に切り替える。\n   * 始動電流と始動トルクは、全電圧始動（$\\Delta$結線）時の **$\\frac{1}{3}$** になる。\n     * 導出: Y結線にすると各巻線（相）に加わる電圧が$\\Delta$結線時の$\\frac{1}{\\sqrt{3}}$倍になる → 相電流（巻線電流）も$\\frac{1}{\\sqrt{3}}$倍。トルクは電圧の2乗に比例するため$\\frac{1}{3}$倍。線電流（電源から見た電流）で比較すると、$\\Delta$結線時は線電流＝$\\sqrt{3}\\times$相電流であるのに対し、Y結線時は線電流＝相電流となるため、結果として線電流（始動電流）も全電圧$\\Delta$結線時の$\\frac{1}{3}$になる ($I_Y/I_\\Delta = \\frac{1}{3}$)。\n3. **補償器始動**: \n   * 始動補償器(単巻変圧器)で電動機印加電圧を $\\frac{1}{m}$ (例: 50%, 65%) に下げて始動。\n   * 電動機の始動電流・トルクは全電圧時の $\\frac{1}{m^2}$。電源から見た始動電流も $\\frac{1}{m^2}$ になる。\n   * （補足）変圧器の原理上、高圧側（電源側）と低圧側（電動機側）の皮相電力は等しい。\n4. **リアクトル始動 / 一次抵抗始動**: 一次側に直列リアクトルや抵抗を挿入して電圧降下により始動電流を抑える。始動トルクは印加電圧の2乗に比例して減少。\n\n### 巻線形誘導電動機の始動法\n* **二次抵抗始動**: 比例推移を利用。スリップリングを介して二次回路に始動抵抗を挿入し、始動電流を抑えつつ始動トルクを最大化する。速度上昇に伴い抵抗を徐々に短絡する。\n\n## 7. その他の重要ポイント\n* **逆転**: 一次側の三相（U, V, W）のうち、任意の2線を入れ替えると相順が逆になり、回転磁界の回転方向が逆転する。\n* **高調波の影響**: 起磁力に高調波が含まれると振動、騒音、異常トルクの要因になるため、実際の巻線は分布巻や短節巻にして高調波を減らす。\n", "prob": "# 電気機器Ⅱ 問題集（重要問題セレクション）\n\n本問題集は `電気機器Ⅱ_テスト対策ノート.md` の重要トピックから、試験で問われやすい計算・判定問題を厳選したものです。\nまず問題編だけを見て自力で解き、その後「解答・解説」で確認してください。\n\n---\n\n## 問題編\n\n### 問1（同期速度・すべり・二次周波数）\n4極、周波数 $f=50\\,\\text{Hz}$ の三相誘導電動機が、すべり $s=0.04$ で運転している。\n1. 同期速度 $N_s$ を求めよ。\n2. 回転速度 $N$ を求めよ。\n3. 二次周波数 $f_2$ を求めよ。\n\n### 問2（誘導起電力の計算）\n周波数 $f=50\\,\\text{Hz}$、1相あたりの巻数 $w=120$、巻線係数 $k_w=0.96$、1極あたりの磁束の最大値 $\\phi=0.02\\,\\text{Wb}$ の三相誘導電動機について、1相分の誘導起電力（実効値）$E$ を求めよ。\n\n### 問3（パワーフローとトルク）\n4極、$f=50\\,\\text{Hz}$ の三相誘導電動機が、二次入力 $P_2=10\\,\\text{kW}$、すべり $s=0.05$ で運転している。\n1. 二次銅損 $P_{c2}$ を求めよ。\n2. 機械的出力 $P$ を求めよ。\n3. 同期角速度 $\\omega_s$ を求め、トルク $T$ を求めよ。\n\n### 問4（比例推移）\n巻線形誘導電動機において、二次抵抗が $r_2$ のときの全負荷時のすべりが $s_1=0.05$ である。二次回路に外部抵抗を挿入して二次抵抗の合計を $3r_2$ にしたとき、同じトルクを発生させるためのすべり $s_2$ を求めよ。\n\n### 問5（スター・デルタ始動）\nあるかご形誘導電動機を全電圧（$\\Delta$結線）で始動したところ、始動電流は $90\\,\\text{A}$、始動トルクは定格トルクの $1.5$ 倍であった。この電動機をスター・デルタ（Y-$\\Delta$）始動した場合の、始動電流と始動トルク（定格トルクに対する比）をそれぞれ求めよ。\n\n### 問6(最大トルクを発生するすべり)\nある誘導電動機の等価回路定数が $r_1=0.5\\,\\Omega$、$r_2=0.3\\,\\Omega$、漏れリアクタンス $x=x_1+x_2=2.0\\,\\Omega$ であるとき、最大トルクを発生するすべり $s_T$ を求めよ。\n\n### 問7(同期速度・トルク・比例推移・電圧変化の複合問題)\n定格が $90\\,\\text{kW}$、$400\\,\\text{V}$(Y結線、線間電圧)、$50\\,\\text{Hz}$、4極の三相巻線形誘導電動機がある。二次巻線はY結線でスリップリングを通して短絡されており、各相の二次抵抗 $r_2=0.04\\,\\Omega$ である。この電動機を定格電圧・定格周波数で定格出力(このときの負荷トルクを $T_n$ とする)運転しているときのすべり $s_1=0.02$ であった。\n\n1. 同期速度 $N_S$ を求めよ。\n2. すべり $s_1$ における回転速度 $N_1$ を求めよ。\n3. すべり $s_1$ におけるトルク $T_n$ を求めよ。\n4. 二次回路の各相に $R=0.02\\,\\Omega$ を直列に挿入し、定格電圧・定格周波数で同じ負荷トルク $T_n$ で運転した。このときのすべり $s_2$ を求めよ。\n5. $R=0.02\\,\\Omega$ を挿入したまま、周波数は変えずに電圧だけを $350\\,\\text{V}$ に変更したところ、ある負荷トルク $T$ で安定運転した。このときのすべりは4.の結果と同じであった。この負荷トルク $T$ を求めよ。\n\n---\n---\n\n## 解答・解説編\n\n### 問1 解答\n1. $$ N_s=\\frac{120f}{P}=\\frac{120\\times50}{4}=1500\\,\\text{min}^{-1} $$\n\n2. $$ N=(1-s)N_s=(1-0.04)\\times1500=0.96\\times1500=1440\\,\\text{min}^{-1} $$\n\n3. $$ f_2=sf=0.04\\times50=2\\,\\text{Hz} $$\n\n→ 回転子は同期速度よりわずかに遅い $1440\\,\\text{min}^{-1}$ で回転し、回転子に誘導される起電力の周波数は固定子側の $1/25$（$2\\,\\text{Hz}$）と非常に低くなる。\n\n---\n\n### 問2 解答\n誘導起電力の式 $E=4.44k_wfw\\phi$ に各値を代入する。\n\n$$ E=4.44\\times0.96\\times50\\times120\\times0.02 $$\n\n順に計算すると、\n\n$$ 4.44\\times0.96\\approx4.2624 $$\n$$ 4.2624\\times50\\approx213.12 $$\n$$ 213.12\\times120\\approx25574.4 $$\n$$ 25574.4\\times0.02\\approx511.5\\,\\text{V} $$\n\nよって $E\\approx511.5\\,\\text{V}$。\n\n→ 巻線係数 $k_w=k_dk_p$（分布巻・短節巻による係数）が1より小さいため、すべての導体起電力を単純に足し合わせた場合（$k_w=1$）よりも実際の誘導起電力はやや小さくなる。\n\n---\n\n### 問3 解答\n1. $$ P_{c2}=sP_2=0.05\\times10\\,\\text{kW}=0.5\\,\\text{kW}=500\\,\\text{W} $$\n\n2. $$ P=(1-s)P_2=(1-0.05)\\times10\\,\\text{kW}=0.95\\times10\\,\\text{kW}=9.5\\,\\text{kW}=9500\\,\\text{W} $$\n\n   （$P_2:P_{c2}:P=1:s:(1-s)=1:0.05:0.95$ の比を確認するとよい）\n\n3. 同期角速度は、問1と同様に $N_s=\\dfrac{120f}{P_{\\text{極}}}=\\dfrac{120\\times50}{4}=1500\\,\\text{min}^{-1}$ なので、\n\n   $$ \\omega_s=\\frac{2\\pi N_s}{60}=\\frac{2\\pi\\times1500}{60}=2\\pi\\times25=50\\pi\\approx157.1\\,\\text{rad/s} $$\n\n   トルクは $T=\\dfrac{P_2}{\\omega_s}$（二次入力＝同期ワットの関係）より、\n\n   $$ T=\\frac{10000}{157.1}\\approx63.7\\,\\text{N}\\cdot\\text{m} $$\n\n---\n\n### 問4 解答\n比例推移の関係式 $\\dfrac{r_2}{s_1}=\\dfrac{r_2+R_{ext}}{s_2}$ において、二次抵抗の合計を $3r_2$（つまり分子が $3r_2$）とすると、\n\n$$ \\frac{r_2}{s_1}=\\frac{3r_2}{s_2} $$\n\n両辺の $r_2$ を消去して整理すると、\n\n$$ s_2=3s_1=3\\times0.05=0.15 $$\n\n→ 二次抵抗を3倍にすると、同一トルクを発生するすべりも3倍になる（比例推移）。これにより、より低速（大きいすべり）の領域でも全負荷トルクに相当するトルクを発生できるため、始動トルクの確保や速度制御に利用される。\n\n---\n\n### 問5 解答\nスター・デルタ始動では、始動時はY結線にすることで、各巻線（相）にかかる電圧が $\\Delta$結線時の $\\dfrac{1}{\\sqrt{3}}$ 倍になる。トルクは電圧の2乗に比例するため、始動トルクは $\\left(\\dfrac{1}{\\sqrt{3}}\\right)^2=\\dfrac{1}{3}$ 倍になる。線電流（始動電流）も同様に全電圧$\\Delta$結線時の $\\dfrac{1}{3}$ になる。\n\n- **始動電流**: $90\\,\\text{A}\\times\\dfrac{1}{3}=30\\,\\text{A}$\n- **始動トルク**: $1.5\\times\\dfrac{1}{3}=0.5$（定格トルクの **50%**）\n\n→ Y-$\\Delta$始動により始動電流を $1/3$ に抑えられる一方、始動トルクも $1/3$ に減少するため、始動トルクが不足しないか（負荷を始動できるか）の確認が必要になる。\n\n---\n\n### 問6 解答\n最大トルクを発生するすべりの式 $s_T=\\dfrac{r_2}{\\sqrt{r_1^2+x^2}}$ に値を代入する。\n\n$$ \\sqrt{r_1^2+x^2}=\\sqrt{0.5^2+2.0^2}=\\sqrt{0.25+4}=\\sqrt{4.25}\\approx2.06 $$\n\n$$ s_T=\\frac{0.3}{2.06}\\approx0.146 $$\n\n→ $s_T$ は $r_2$ に比例するため、巻線形誘導電動機で二次抵抗 $r_2$ を増やすと $s_T$ も大きくなり、最大トルクを発生するすべりがより低速側（始動側）に移動する（比例推移の根拠）。一方、最大トルクの値 $T_m=\\dfrac{3V_1^2}{2\\omega_s(r_1+\\sqrt{r_1^2+x^2})}$ は $r_2$ を含まないため、$r_2$ を変えても最大トルクの大きさ自体は変化しない。\n\n---\n\n### 問7 解答\n\n**1. 同期速度 $N_S$**\n\n$$ N_S=\\frac{120f}{p}=\\frac{120\\times50}{4}=1500\\,\\text{min}^{-1} $$\n\n**2. 回転速度 $N_1$**\n\n$$ N_1=N_S(1-s_1)=1500\\times(1-0.02)=1470\\,\\text{min}^{-1} $$\n\n**3. トルク $T_n$**\n\n定格出力 $P_n=90\\,\\text{kW}$ は機械的出力（軸出力）なので、$T_n=\\dfrac{P_n}{\\omega_1}$ を用いる。\n\n$$ \\omega_1=\\frac{2\\pi N_1}{60}=\\frac{2\\pi\\times1470}{60}\\approx153.9\\,\\text{rad/s} $$\n\n$$ T_n=\\frac{90000}{153.9}\\approx584.6\\,\\text{N}\\cdot\\text{m} $$\n\n**4. すべり $s_2$（比例推移）**\n\nL形等価回路では、トルクは二次抵抗とすべりの比 $r_2/s$ の関数として決まるため、同じ $r_2/s$ であれば同じトルクが発生する（比例推移）。二次回路に $R=0.02\\,\\Omega$ を追加して同じトルク $T_n$ で運転する条件は、\n\n$$ \\frac{r_2}{s_1}=\\frac{r_2+R}{s_2} $$\n\n$$ s_2=s_1\\times\\frac{r_2+R}{r_2}=0.02\\times\\frac{0.04+0.02}{0.04}=0.02\\times1.5=0.03 $$\n\n→ 二次抵抗を1.5倍にすると、同じトルクを発生するすべりも1.5倍（$0.02\\to0.03$）になる。\n\n**5. 負荷トルク $T$（電圧変化後）**\n\nトルクの一般式は $T\\propto V^2\\times g\\!\\left(\\dfrac{r_2}{s}\\right)$ の形で表される（$g$ は $r_2/s$ だけで決まる関数。周波数が同じなら $x_2$・$r_1$ は不変）。\n\n4.より $r_2/s_1=(r_2+R)/s_2$ が成り立っているため、$g(r_2/s)$ の値は3.で求めた $T_n$ のときと変わらない。よって、この設定では $T\\propto V^2$ の関係だけでトルクが決まる。\n\n$$ T=T_n\\times\\left(\\frac{350}{400}\\right)^2=584.6\\times\\left(\\frac{7}{8}\\right)^2\\approx584.6\\times0.766\\approx447.5\\,\\text{N}\\cdot\\text{m} $$\n\n→ 電圧を下げると（周波数・すべりが同じでも）トルクは電圧の2乗に比例して小さくなる。この問題では二次抵抗を増やして比例推移させた後のすべりがそのまま保たれた、という設定なので、4.で求めた条件をそのまま使って $V^2$ 比例則だけを適用すればよい。\n"}, "オプトロニクス": {"note": "# オプトロニクス テスト対策チートシート\n\n本チートシートは、講義資料（第1回〜第8回）に基づくオプトロニクスの重要トピック、公式、概念のまとめです。\n\n---\n\n## 1. 光の基本性質とレーザ光の特徴（第1回）\n### 基本公式\n- **真空中の光速**: $c = 2.99792458 \\times 10^8 \\approx 3 \\times 10^8$ [m/s]\n- **物質中の光速**: $v = c / n$ （$n$: 物質の屈折率）\n- **波長と周波数の関係**: $c = \\lambda \\cdot \\nu$ （$\\lambda$: 波長、$\\nu$: 周波数）\n- **電磁波スペクトル**: 可視光の波長は約380〜770 nm。短波長側には紫外線・X線・γ線、長波長側には赤外線・電波が続く。\n\n### 平面波としての光\n- $z$軸方向に伝搬する平面波: $\\psi(z,t) = A\\cos\\left(2\\pi\\left(ft - \\dfrac{z}{\\lambda}\\right)\\right)$ （$f$: 周波数、$\\lambda$: 波長、$f\\lambda = c$）\n- 平面波は同位相の波面が平面となり、横方向に無限に広がる理想的な波。実際の波（雷ノイズなど自然光）は単一の正弦波ではない。\n\n### レーザ光の2大特徴\n1. **単色性**: スペクトルの相対幅（$\\Delta\\lambda / \\lambda$ または $\\Delta\\nu/\\nu$）が極めて小さい性質。\n   - 例：He-Neレーザのスペクトル幅 $\\Delta\\lambda \\approx 10^{-9}$ μm、波長 $\\lambda=0.6328$ μm → $\\Delta\\lambda/\\lambda \\approx 10^{-6}$（非常に単色性が高い）。\n   - 自然光（太陽光・白熱光など）はスペクトル幅が広く、単色性が低い。\n2. **指向性**: 光が広がらずに進む性質。\n   - レーザビームは**ガウシアンビーム**として伝搬し、わずかな広がり角 $2\\Delta\\theta = \\dfrac{2\\lambda}{\\pi w_0}$ （$w_0$: ビームウェスト径）をもつ。\n   - 例：He-Neレーザ光の広がり角は約 $10^{-4}$ rad。\n   - **伝搬方向スペクトル**で見ると、理想的な平面波は$z$軸方向のみにパワーをもつ線スペクトル（デルタ関数）。レーザビーム（ガウシアンビーム）はわずかに幅をもつスペクトル、自然光（白熱電球など）は等位相面が様々な方向に広がるため大きく広がったスペクトルとなる。\n   - レーザ（LASER）＝ Light Amplification by Stimulated Emission of Radiation（放射の誘導放出による光増幅）\n\n---\n\n## 2. 波動光学・偏光・光強度（第2回）\n### マクスウェル方程式と平面波\n- 媒質中の光速: $v = 1 / \\sqrt{\\varepsilon\\mu}$ （$\\varepsilon = \\varepsilon^* \\varepsilon_0$、$\\mu = \\mu^* \\mu_0$）\n- **屈折率**: $n = c / v = \\sqrt{\\varepsilon^* \\mu^*}$ （非磁性体なら $n = \\sqrt{\\varepsilon^*}$）\n- 真空中の波長 $\\lambda_0$ と媒質中の波長 $\\lambda$: $\\lambda = \\lambda_0 / n$\n- 平面波: 電界 $E$ と磁界 $H$ は横方向成分のみで互いに直交する。\n  - $E_x(z, t) = E_0 \\cos(\\omega(t - z/v) + \\Phi)$\n  - $H_y = E_x / (\\mu v)$\n\n### 偏光（直交する2つの電界成分の位相差 $\\delta = \\delta_1 - \\delta_2$ による分類）\n- **直線偏光**: $\\delta = m\\pi$ （$m$は整数）\n- **円偏光**: $\\delta = (m + 1/2)\\pi$ かつ 振幅 $A_1 = A_2$ のとき\n- **楕円偏光**: 上記以外のとき（一般の位相差や振幅差）\n\n### 光波のエネルギーと強度\n- **ポインチング・ベクトル**: $\\boldsymbol{S} = \\boldsymbol{E} \\times \\boldsymbol{H}$ [W/m²]\n- **光の強度 $I$**: 時間平均値 $\\langle \\boldsymbol{S} \\rangle$ に比例。$I \\propto |\\boldsymbol{E}|^2$\n\n---\n\n## 3. 干渉とコヒーレンス（第3回・第4回）\n### 2光波による干渉縞\n- 干渉の光強度: $I = I_1 + I_2 + 2\\sqrt{I_1 I_2} \\cos(2ky\\sin\\theta - \\delta)$\n  - 位相項が $2m\\pi$ のときに強め合い（明線）となる。\n- **干渉縞の周期**: $\\Lambda = \\frac{\\lambda}{2\\sin\\theta} = \\frac{\\lambda_0}{2n\\sin\\theta}$\n- **可視度（Visibility）**: $V = \\frac{I_{\\max} - I_{\\min}}{I_{\\max} + I_{\\min}}$\n\n### コヒーレンス（可干渉性）\n- **時間的コヒーレンス**: 光波の時間的一様性（単色性の度合い）。\n  - コヒーレンス長: $L_c = c \\cdot \\Delta t = c / \\Delta f$\n- **空間的コヒーレンス**: 波面の空間的一様性。指向性（平行度）や集光性に関係。\n\n---\n\n## 4. レーザの発振原理（第4回〜第6回）\n### 光波と電子の相互作用\n- **光子のエネルギー**: $E = h\\nu = hc/\\lambda$ （$h$: プランク定数）\n- 3つの基本遷移:\n  1. **自然放出**: 上の準位から下の準位へ自発的に遷移し光子を放出。\n  2. **誘導吸収**: 光子を吸収して下の準位から上の準位へ励起。\n  3. **誘導放出**: 入射光子に誘導されて上の準位から下の準位へ遷移し、同位相・同エネルギーの光子を放出（＝光増幅）。\n\n### 反転分布と光増幅利得\n- **ボルツマン分布**: 熱平衡状態では常に下の準位の原子数が多い（$N_1 > N_2$）。\n- **反転分布**: 外部からエネルギーを与える（ポンピング）ことで、$N_2 > N_1$ とする状態。レーザ発振（誘導放出による光増幅）に不可欠。\n- 光子数密度は指数関数的に増大: $S(z) = S(0) e^{\\gamma z}$ （$\\gamma$: パワー利得係数）\n\n### 光共振器と発振条件\n- **共振器1往復の振幅条件**: $r_1 r_2 e^{(\\gamma - \\alpha)2L} = 1$ （利得が損失を上回る）\n- **共振器1往復の位相条件**: 定在波が生じる条件。$\\lambda_{0m} = \\frac{2nL}{m}$ （$m$: 整数）\n- **縦モードの波長間隔**: $\\Delta\\lambda_0 = \\frac{\\lambda_0^2}{2nL}$\n- 光子寿命: $\\tau_p = \\frac{n}{c} \\left( \\alpha + \\frac{1}{L}\\ln\\frac{1}{r_1r_2} \\right)^{-1}$\n\n### エネルギー単位の換算（重要・計算問題でよく使う）\n光子エネルギーは J（ジュール）、eV（電子ボルト）、K（絶対温度）、Hz（周波数）、cm⁻¹（波数・カイザー）のいずれでも表せ、相互に変換できる。\n- **波長とエネルギー(eV)の関係**: $E\\,[\\text{eV}] = \\dfrac{hc}{e\\lambda} = \\dfrac{1.239842}{\\lambda\\,[\\mu\\text{m}]}$\n- **代表的な換算値**:\n  - $1\\,\\text{eV} = 1.60218\\times10^{-19}$ J $= 2.41799\\times10^{14}$ Hz $= 8.06554\\times10^{3}$ cm⁻¹ $= 1.16045\\times10^{4}$ K\n  - $1\\,\\text{cm}^{-1}$（カイザー） $= 1.98645\\times10^{-23}$ J $= 1.23984\\times10^{-4}$ eV $= 2.99792\\times10^{10}$ Hz $= 1.43877$ K\n  - $1\\,\\text{K} = 1.38066\\times10^{-23}$ J $= 8.61739\\times10^{-5}$ eV\n- 計算問題では、与えられた量（波長・波数・eVなど）をいったん J または eV に変換し、求めたい単位へ変換するのが基本。\n\n---\n\n## 5. 各種レーザの特徴（第7回〜第8回）\n※第8回資料には「6.3 固体レーザ」と「6.4 半導体レーザ」の両方が含まれる（現時点で確認できる講義資料は第8回まで）。\n\n### 6.1 レーザの分類（励起方式と発振波長の範囲）\n| 種類 | 主な励起方式 | 発振波長の範囲 |\n|---|---|---|\n| 気体レーザ | 主に放電励起 | 0.2 μm 〜 1000 μm（紫外〜遠赤外） |\n| 固体レーザ | 主に光励起（ランプ光またはレーザ光） | 0.69 μm 〜 3.3 μm（可視〜近赤外） |\n| 液体レーザ | 色素レーザなど | 0.32 μm 〜 1 μm（波長可変） |\n| 半導体レーザ | 半導体励起（pn接合） | III-V族化合物: 0.6〜1.6 μm、鉛化合物: 3〜30 μm |\n\n### 気体レーザ（主に放電励起）\n- **He-Neレーザ**:\n  - He原子の準安定準位 $2^1S, 2^3S$ は、Ne原子の $2s, 3s$ 準位とほぼ共鳴（エネルギーがほぼ一致）。\n  - He-Ne混合ガスの放電で励起されたHe原子が、原子間衝突によりエネルギーをNe原子の $2s, 3s$ 準位に伝達し、Neに反転分布を形成。\n  - Ne原子が $3s \\to 2p$ に遷移する際に**632.8 nm（赤色）**のレーザ光が発振。その後 $2p \\to 1s$ で緩和。\n  - レーザー光の伝搬方向・スペクトルは理想的な単一モードに近く安定しているため、干渉計測・レーザ顕微鏡などに幅広く使用。\n  - **ブルースター窓（外部鏡型構造）**: レーザガラス管両端の光学窓からの反射損をなくすため、窓面を管軸に対してブルースター角だけ傾けてある（$\\tan\\theta_B = n_2/n_1$）。\n- **CO2レーザ**: CO2分子の振動エネルギー準位を利用。\n  - 分子振動の3つの基準モード: 対称伸縮振動 $\\nu_1$、変角振動 $\\nu_2$、非対称伸縮振動 $\\nu_3$。\n  - レーザ発振は振動準位 $\\nu_3$ と $\\nu_1$（またはその近傍）の間で起こり、波長9〜11 μm（代表波長10.6 μm）に多数の発振線をもつ。\n  - 高効率・大出力。切断・溶接・マーキングなどの工業用や、医療用レーザメスにも応用。\n- **エキシマレーザ**: 希ガス（Xe, Kr, Ar）とハロゲン（F, Cl, Br）の混合ガスをレーザ媒質とする。\n  - 希ガスは通常、他原子と結合せず分子を作らないが、励起状態になると結合して分子（エキシマ）を形成する。\n  - レーザ下準位（基底状態）に存在する分子数が非常に少ないため、反転分布が容易に得られる。\n  - 発振波長は紫外（KrF: 248 nm, ArF: 193 nm）。0.35ミクロン以下の微細加工（64MB-DRAM等の半導体露光）に使用。\n\n### 固体レーザ（主に光励起）\n- 結晶（ルビー、YAGなど）またはガラス材料を母材とし、希土類元素などをドープして利用。\n- 励振方式: **フラッシュランプ励起**、または**レーザダイオード励起**（LD励起、Diode Pumped Solid State = DPSS）。\n- **ルビーレーザ**: 初めて発振に成功したレーザ。Cr³⁺イオンを利用する3準位レーザ（波長 694.3 nm）。\n- **Nd:YAGレーザ**: Nd³⁺イオンを利用する4準位レーザ。波長 1.064 μm（近赤外）。\n  - 誘導放出確率が大きく発振しきい値が低い。非線形光学結晶を用いて高調波（532 nm, 355 nm等）も出力可能。\n- **チタンサファイアレーザ**: Ti³⁺イオンをドープ。非常に広い波長域の波長可変レーザ。超短パルス（フェムト秒）の発生に最適。\n\n### 半導体レーザ（LD）\n- pn接合を用いた**ヘテロ接合**（異なる半導体結晶の接合）による活性層（active layer）でレーザ発振。\n- へき開面を共振器ミラーとして利用。小型・低電圧駆動・高効率。\n\n---\n**※試験に向けた計算問題のポイント**\n- 波数（[cm⁻¹]）とエネルギー（[eV]）、波長、周波数の単位変換。\n- 偏光の判定（位相差$\\delta$と振幅からの判別）。\n- 干渉縞の周期 $\\Lambda$ の計算（$\\lambda, n, \\theta$が与えられた場合）。\n- 縦モード間隔の計算。\n- 反射係数からの光の減衰・増幅の立式（発振のしきい値計算）。\n", "prob": "# オプトロニクス 問題集（重要問題セレクション）\n\n本問題集は `オプトロニクス_テスト対策ノート.md` の重要トピックから、試験で問われやすい計算・判定問題を厳選したものです。\nまず問題編だけを見て自力で解き、その後「解答・解説」で確認してください。\n\n---\n\n## 問題編\n\n### 問1（光子エネルギーの単位換算）\nHe-Neレーザの波長は $\\lambda=632.8\\,\\text{nm}$ である。この光子1個のエネルギーを eV 単位、および J 単位で求めよ。\n（$E\\,[\\text{eV}]=\\dfrac{1.239842}{\\lambda\\,[\\mu\\text{m}]}$、$1\\,\\text{eV}=1.60218\\times10^{-19}\\,\\text{J}$ を用いよ。）\n\n### 問2（単色性の定量化）\n中心波長 $\\lambda=632.8\\,\\text{nm}$、スペクトル幅 $\\Delta\\lambda=1.5\\times10^{-3}\\,\\text{nm}$ のHe-Neレーザがある。\n1. 相対スペクトル幅 $\\Delta\\lambda/\\lambda$ を求めよ。\n2. 周波数 $\\nu=c/\\lambda$ を求め、対応するスペクトル幅 $\\Delta\\nu$（Hz単位）を求めよ。\n\n### 問3（干渉縞の周期）\n波長 $\\lambda_0=633\\,\\text{nm}$ の2つの平面波が、空気中（$n=1$）で交差角 $2\\theta=10^\\circ$（つまり $\\theta=5^\\circ$）をなして干渉している。干渉縞の周期 $\\Lambda$ を求めよ。\n\n### 問4（光共振器の縦モード間隔）\n共振器長 $L=30\\,\\text{cm}$、媒質の屈折率 $n=1$、中心波長 $\\lambda_0=633\\,\\text{nm}$ の光共振器について、縦モードの波長間隔 $\\Delta\\lambda_0$ を求めよ。\n\n### 問5（光共振器の発振条件・閾値）\n利得係数 $\\gamma=0.02\\,\\text{cm}^{-1}$、損失係数 $\\alpha=0.005\\,\\text{cm}^{-1}$、共振器長 $L=20\\,\\text{cm}$、一方の鏡の反射率 $r_1=1$（全反射）とする。発振の振幅条件 $r_1r_2e^{(\\gamma-\\alpha)2L}=1$ を満たすために必要な、もう一方の鏡の反射率 $r_2$ を求めよ。\n\n### 問6（偏光状態の判定）\n直交する2つの電界成分の振幅が等しい（$A_1=A_2$）光波について、\n1. 位相差 $\\delta=\\pi/2$ のとき、この光の偏光状態は何か。\n2. 位相差 $\\delta=\\pi$ のとき、この光の偏光状態は何か。\n\n---\n---\n\n## 解答・解説編\n\n### 問1 解答\n波長を $\\mu\\text{m}$ 単位に直すと $\\lambda=0.6328\\,\\mu\\text{m}$。\n\n$$ E\\,[\\text{eV}]=\\frac{1.239842}{0.6328}\\approx1.959\\,\\text{eV} $$\n\nJ単位への変換:\n$$ E\\,[\\text{J}]=1.959\\,\\text{eV}\\times1.60218\\times10^{-19}\\,\\text{J/eV}\\approx3.14\\times10^{-19}\\,\\text{J} $$\n\n---\n\n### 問2 解答\n1. $$ \\frac{\\Delta\\lambda}{\\lambda}=\\frac{1.5\\times10^{-3}\\,\\text{nm}}{632.8\\,\\text{nm}}\\approx2.37\\times10^{-6} $$\n\n   → He-Neレーザの単色性が極めて高いこと（相対スペクトル幅が $10^{-6}$ オーダー）を示す代表的な数値。\n\n2. $$ \\nu=\\frac{c}{\\lambda}=\\frac{3\\times10^8\\,\\text{m/s}}{632.8\\times10^{-9}\\,\\text{m}}\\approx4.74\\times10^{14}\\,\\text{Hz} $$\n\n   $c=f\\lambda$（一定）の関係から、相対変化量も等しい：$\\dfrac{\\Delta\\nu}{\\nu}\\approx\\dfrac{\\Delta\\lambda}{\\lambda}$。よって、\n\n   $$ \\Delta\\nu\\approx\\nu\\times\\frac{\\Delta\\lambda}{\\lambda}\\approx4.74\\times10^{14}\\times2.37\\times10^{-6}\\approx1.12\\times10^{9}\\,\\text{Hz}\\approx1.12\\,\\text{GHz} $$\n\n---\n\n### 問3 解答\n干渉縞の周期の公式 $\\Lambda=\\dfrac{\\lambda}{2\\sin\\theta}=\\dfrac{\\lambda_0}{2n\\sin\\theta}$ に、$\\lambda_0=633\\,\\text{nm}$、$n=1$、$\\theta=5^\\circ$ を代入する。\n\n$\\sin5^\\circ\\approx0.0872$ より、\n\n$$ \\Lambda=\\frac{633\\,\\text{nm}}{2\\times0.0872}\\approx\\frac{633}{0.1744}\\approx3630\\,\\text{nm}\\approx3.63\\,\\mu\\text{m} $$\n\n→ 2光波の交差角が大きくなるほど、干渉縞の周期は短く（密に）なる。\n\n---\n\n### 問4 解答\n縦モード間隔の公式 $\\Delta\\lambda_0=\\dfrac{\\lambda_0^2}{2nL}$ に、$\\lambda_0=633\\,\\text{nm}=633\\times10^{-9}\\,\\text{m}$、$n=1$、$L=0.3\\,\\text{m}$ を代入する。\n\n$$ \\Delta\\lambda_0=\\frac{(633\\times10^{-9})^2}{2\\times1\\times0.3}=\\frac{4.01\\times10^{-13}}{0.6}\\approx6.68\\times10^{-13}\\,\\text{m} $$\n\nこれをnm単位に直すと、\n\n$$ \\Delta\\lambda_0\\approx6.68\\times10^{-4}\\,\\text{nm}\\approx0.67\\,\\text{pm} $$\n\n→ 共振器が長くなる（$L$ が大きくなる）ほど、縦モード間隔は狭くなる（モードが密になる）。\n\n---\n\n### 問5 解答\n発振の振幅条件 $r_1r_2e^{(\\gamma-\\alpha)2L}=1$ より、\n\n$$ r_2=\\frac{1}{r_1\\,e^{(\\gamma-\\alpha)2L}} $$\n\n指数部分を計算すると、\n\n$$ (\\gamma-\\alpha)\\times2L=(0.02-0.005)\\,\\text{cm}^{-1}\\times2\\times20\\,\\text{cm}=0.015\\times40=0.6 $$\n\n$$ e^{0.6}\\approx1.822 $$\n\n$r_1=1$ なので、\n\n$$ r_2=\\frac{1}{1\\times1.822}\\approx0.549 $$\n\n→ 出力側ミラーの反射率を約 **55%** とすれば、利得と損失・出力ロスがちょうどバランスし、定常発振状態（振幅条件を満たす）となる。反射率がこれより高いと利得が損失を上回り光強度が増大し続け、低いと減衰してしまう。\n\n---\n\n### 問6 解答\n偏光の分類は、直交する2つの電界成分の位相差 $\\delta$ と振幅 $A_1, A_2$ により決まる。\n\n1. $\\delta=\\pi/2=(0+1/2)\\pi$ は「$\\delta=(m+1/2)\\pi$」の形（$m=0$）に該当し、かつ振幅が等しい（$A_1=A_2$）ので、**円偏光**となる。\n\n2. $\\delta=\\pi=1\\times\\pi$ は「$\\delta=m\\pi$」の形（$m=1$）に該当するので、振幅に関わらず**直線偏光**となる。\n\n→ 同じ「振幅が等しい」条件でも、位相差が $\\delta=m\\pi$（直線偏光）か $\\delta=(m+1/2)\\pi$（円偏光）かで偏光状態が大きく異なる点に注意。それ以外の一般の位相差・振幅では楕円偏光となる。\n"}};
+
+const priorityData = {
+  '音響工学': `## テスト優先度と学習ロードマップ
+
+### 優先度一覧
+
+| 回 | トピック | 重要度 | テスト出題傾向 |
+|---|---|---|---|
+| 第1回 | 音波の基礎と性質 | ★☆☆ | 用語定義・音速の式の基礎理解 |
+| 第2回 | 音のスペクトルと物理量 | ★★☆ | dB 対数計算・インピーダンス・インテンシティ（全回共通ツール） |
+| 第3回 | 波動としての性質と空間伝搬 | ★★☆ | うなり周波数・一端閉止管の共鳴周波数の計算 |
+| 第4回 | 音の知覚と聴覚 | ★★☆ | A特性による dB 補正計算・専門用語の説明 |
+| 第5回 | 音響波動方程式の導出 | ★★★ | 波動方程式の導出プロセス（テイラー展開・3式から導出）の手書き再現 |
+| 第6回 | 音波の反射・透過 | ★★★ | インピーダンスを用いた反射率計算・λ/4 整合層が反射ゼロになる理由の数式説明 |
+| 第7回 | 点音源からの音波放射 | ★★★ | 球面波の速度ポテンシャル・ダイポール近似（微小ダイポール）の計算 |
+| 第8回 | 面音源からの音波放射 | ★★★ | 遠方近似による指向性関数（ベッセル関数）の導出 |
+
+### 推奨学習ロードマップ
+
+1. **【最優先（★★★）】** 第5回 → 第6回 → 第7回 → 第8回（数理音響のコア）
+2. **【第二優先（★★☆）】** 第2回（dB・インピーダンス）→ 第3回（管共鳴計算）→ 第4回（心理音響用語）
+3. **【第三優先（★☆☆）】** 第1回（用語定義）
+
+> ポイント: 第5回と第6回を先に固めると、第7・8回がスムーズに理解できる。`,
+
+  '電子回路Ⅱ': `## テスト優先度と学習ロードマップ
+
+### 優先度一覧
+
+| 回数 | トピック | 重要度 | テスト出題傾向 |
+|:---:|---|:---:|---|
+| **第1回** | 負帰還増幅回路の原理と効果 | ★★★ | 負帰還による利得の安定化・インピーダンス変化。電圧利得・入力インピーダンスの計算 |
+| **第2回** | 負帰還の安定性と差動増幅器 | ★★☆ | ボード線図を用いた安定性の判別。ループ方程式の導出 |
+| **第3回** | 集積化回路と差動増幅器の特性 | ★★★ | 差動利得・同相利得の導出。CMRRの計算 |
+| **第4回** | 直流電流源回路（カレントミラー） | ★★☆ | カレントミラー回路のベース・コレクタ電流の立式と近似計算 |
+| **第5回** | ダーリントン接続・大信号増幅回路 | ★★★ | A級・B級プッシュプル電力増幅の図的解法。電力効率・最大出力電力・コレクタ損失の計算 |
+| **第6回** | 演算増幅器の基本とパラメータ | ★★☆ | GB積・スルーレートによる最大出力周波数・電圧の計算 |
+| **第7回** | 演算増幅器の基本回路 | ★★★ | ナレータ・ノレータモデルを用いた反転・非反転増幅回路の電圧利得の導出 |
+| **第8回** | 演算増幅器の線形演算回路への応用 | ★★★ | 加算・減算・微積分回路の等価回路作成と出力電圧の数式導出 |
+| **第9回** | 発振回路（ウィーンブリッジ） | ★★★ | ループ利得の複素数展開。発振条件（虚部=0、実部≧1）から発振周波数と必要利得の導出 |
+
+### 推奨学習ロードマップ
+
+1. **【最優先】** 第7・8回（オペアンプ基本回路・応用）— パターンが決まっており得点しやすい
+2. **【最優先】** 第9回（ウィーンブリッジ発振回路）— 複素数のループ利得展開から発振条件を自力で導出
+3. **【最優先】** 第5回（大信号増幅回路）— P_DC・P_L・P_C・η の計算は出題頻度高
+4. **【優先】** 第1・3回（負帰還・差動増幅器）— 等価回路からキルヒホッフで利得・インピーダンス導出
+5. **【総仕上げ】** 第2・4・6回 — 電流源計算・GB積・スルーレートを素早く処理できるように`,
+
+  '電子デバイス': `## テスト優先度と学習ロードマップ
+
+### 優先度一覧
+
+| 回数 | トピック | 重要度 | テスト出題傾向 |
+|:---:|---|:---:|---|
+| **第0回** | 講義概要・半導体の基礎 | ★☆☆ | 半導体の定義に関する知識問題 |
+| **第1回** | 半導体の基礎 | ★★☆ | 真性・外因性半導体の違い、フェルミ分布、電気抵抗率・エネルギー換算の計算 |
+| **第2回** | pn接合 (1) | ★★☆ | ドリフト・拡散運動の違い、pn接合の基本原理とエネルギーバンド図の描画 |
+| **第3回** | pn接合 (2) | ★★★ | ガウスの法則を用いた空乏層内の電界・電位分布の積分導出とグラフ化 |
+| **第4回** | バイポーラトランジスタ (1) | ★★☆ | npn/pnp型BJTの構造・回路記号・エネルギーバンド図を用いた基本動作の理解 |
+| **第5回** | バイポーラトランジスタ (2) | ★★★ | V_CE-I_C 特性グラフへの直流負荷線の描画と動作点の決定 |
+| **第6回** | 中間試験（前半の総括） | — | 第1〜5回の総復習（特に第3・5回の計算・作図が重要） |
+| **第7回** | MOSFET (1) | ★★☆ | nMOS/pMOSのデバイス構造の描画、ゲート電圧によるON/OFF条件 |
+| **第8回** | MOSFET (2) + CMOS | ★★★ | CMOSインバータの構成・動作原理・貫通電流・真理値表の導出 |
+| **第9回** | CMOS論理回路 (1) | ★★☆ | 複数段インバータの真理値表作成・入出力波形のタイミング図 |
+
+### 推奨学習ロードマップ
+
+1. **【最優先】** 第3回（pn接合の電界・電位分布）— ガウスの法則から E(x) を求め積分して φ(x) と内蔵電位差を導出
+2. **【最優先】** 第5回（BJTの直流負荷線）— V_CE-I_C 特性グラフへの負荷線描画と動作点の決定
+3. **【優先】** 第1回（半導体の基礎計算）— 電気抵抗率・抵抗の計算と k_B T を用いたeV換算
+4. **【優先】** 第8・9回（CMOSインバータ・論理回路）— ON/OFFの組み合わせと複数段の真理値表
+5. **【総仕上げ】** 第2・4・7回 — エネルギーバンド図と回路記号の作図`,
+
+  'オプトロニクス': `## テスト優先度と学習ロードマップ
+
+### 優先度一覧
+
+| 回数 | トピック | 重要度 | テスト出題傾向 |
+|:---:|---|:---:|---|
+| **第1回** | 光の基本性質とレーザ光の特徴 | ★☆☆ | 光速・波長・周波数の関係。レーザ光の2大特徴（単色性・指向性）の説明問題 |
+| **第2回** | 波動光学・偏光・光強度 | ★★★ | 2つの電界成分の位相差から偏光状態（直線・円・楕円）を判別する問題が頻出 |
+| **第3回** | 干渉と干渉縞 | ★★★ | 干渉縞の周期 Λ の計算、強め合い・弱め合いの条件式の立式 |
+| **第4回** | コヒーレンスとエネルギー換算 | ★★★ | 波数(cm⁻¹)・eV・J・Hz の相互換算計算が必ず出題 |
+| **第5回** | レーザ発振原理 (1) | ★★☆ | 自然放出・誘導放出の違い、ボルツマン分布と反転分布の概念と計算 |
+| **第6回** | レーザ発振原理 (2) | ★★★ | 発振条件（振幅・位相条件）、光子寿命、縦モード間隔 Δλ₀ の計算が頻出 |
+| **第7回** | 各種レーザの特徴（気体・固体） | ★★☆ | He-Ne・CO₂・YAG等の励起方式と発振波長の対応。ブルースター角の計算 |
+| **第8回** | 半導体レーザ | ★★☆ | ヘテロ接合の構造、バンドギャップと発振波長の関係計算 |
+
+### 推奨学習ロードマップ
+
+1. **【最優先】** 第4回（エネルギー単位換算）— 波数・eV・J・Hz間の変換を完璧に
+2. **【最優先】** 第6回（レーザ発振条件・縦モード間隔）— 発振しきい値と Δλ₀ = λ₀²/(2nL) の計算
+3. **【最優先】** 第2・3回（偏光の判別・干渉縞の周期）— 位相差 δ からの偏光判定と Λ = λ/(2sinθ) の計算
+4. **【優先】** 第5・7・8回（レーザの原理・各種レーザの特徴）— 3つの基本遷移の説明、各レーザの波長と励起方式の暗記
+5. **【総仕上げ】** 第1回（光の基本性質）— 単色性・指向性などの用語説明の整理`,
+
+  '制御の基礎': `## 各回トピック別 重要度一覧
+
+★★★ = テストに必ず出る・完全暗記必須 / ★★☆ = 出題可能性あり・傾向理解 / ★☆☆ = 参考程度
+
+| 回 | トピック | 重要度 |
+|---|---|:---:|
+| **第1回** | ラプラス変換の定義式・変換表（δ, 1, e^-at, sin, cos など）・微分積分定理・最終値定理 | ★★★ |
+| **第2回** | 伝達関数の定義 G(s)=Y(s)/U(s) | ★★★ |
+| | フィードバック制御とフィードフォワード制御の違い | ★★☆ |
+| **第3回** | 1次遅れ要素 K/(Ts+1)、2次遅れ要素の標準形 | ★★★ |
+| | RC回路・質量ばねダンパ系の伝達関数導出 | ★★★ |
+| **第4回** | ブロック線図（加え合わせ点・引き出し点） | ★★★ |
+| | 直列 G1G2・並列 G1±G2・FB結合 G1/(1±G1G2) | ★★★ |
+| | 複合ブロック線図の簡単化手順 | ★★★ |
+| **第5回** | 等価変換（ブロックと加え合わせ点/引き出し点の入れ替え） | ★★★ |
+| | インパルス応答・ステップ応答の逆ラプラス変換 | ★★★ |
+| **第6回** | 1次系ステップ応答 y(t)=K(1-e^{-t/T})、定常値 K、時定数 T（63.2%） | ★★★ |
+| | ヘビサイドの展開公式 | ★★★ |
+| | 2次系の標準形（ζ・ωn・K の定義） | ★★★ |
+| **第7回** | 特性方程式の解の分類（ζ<1:振動、ζ=1:臨界、ζ>1:過制動） | ★★★ |
+| | 不足制動インパルス応答の公式・逆ラプラス変換公式 | ★★★ |
+| | ζ→振動特性、ωn→速応性、K→定常値 | ★★★ |
+| **第8回** | 極・零点の定義（左半平面→安定、虚軸から遠→速収束） | ★★★ |
+| | 特性値：T_r（立上り）・T_d（遅れ）・T_s（整定）・A_max（オーバーシュート） | ★★★ |
+| | 代表極（原点に最も近い極が応答を支配） | ★★★ |
+| **第9回** | 安定性の基本条件（すべての極の実部が負 ⟺ 安定） | ★★★ |
+| | **ラウスの安定判別法**（表の作り方・たすき掛け・第1列符号変化=不安定極数） | ★★★ |
+
+### 推奨学習ロードマップ
+
+1. **【最優先】** 第9回 ラウス安定判別法 — 表の作り方を自力で再現
+2. **【最優先】** 第4・5回 ブロック線図の簡単化 — 直列/FB結合＋等価変換
+3. **【最優先】** 第6・7回 2次系の応答 — ζ・ωn の分類と不足制動の応答式
+4. **【優先】** 第1回 ラプラス変換 — 変換表の暗記＋ヘビサイド展開公式
+5. **【優先】** 第8回 極・零点と応答 — 代表極と極配置の読み取り`,
+
+  '電気機器Ⅱ': `## 各回トピック別 重要度一覧
+
+| 回 | 主なトピック | 重要度 | ポイント |
+|---|---|---|---|
+| 第1回 | 電気回路と磁気回路のアナロジー | ★★☆ | Φ=nI/R_m、合成磁気抵抗 |
+| 第2回 | 同期速度・すべり | ★★★ | N_s=120f/P、s=(N_s-N)/N_s |
+| 第3回 | 固定子起磁力・誘導起電力・誘導機の種類 | ★★★ | E=4.44 k_w f w Φ、各種類の始動特性 |
+| 第4回 | T形等価回路・r2/s分解・パワーフロー | ★★★ | P2:P_c2:P=1:s:(1-s)、T=P2/ωs |
+| 第5回 | 簡易等価回路・3試験 | ★★★ | 無負荷試験→Y0、拘束試験→r2・x |
+| 第6回 | T-s特性・最大トルク・出力特性 | ★★★ | s_T=r2/√(r1²+x²)、T∝s（小s） |
+| 第7回 | 比例推移 | ★★★ | r2/s1=(r2+R)/s2、T_m は不変 |
+| 第8回 | 始動電流・全電圧始動・Y-Δ始動 | ★★★ | Y-Δで電流・トルクとも1/3 |
+| 第9回 | 補償器・リアクトル・二次抵抗始動・逆転 | ★★★ | 補償器で電源電流 1/m² 倍 |
+
+### 推奨学習ロードマップ
+
+1. **【最優先】** 第4回 T形等価回路とパワーフロー — P2:P_c2:P=1:s:(1-s) と T=P2/ωs の計算
+2. **【最優先】** 第5回 3試験（無負荷・拘束・直流）— 試験から等価回路定数を求める手順
+3. **【最優先】** 第6回 最大トルク — s_T の公式と T-s 特性グラフ
+4. **【優先】** 第7回 比例推移 — 外部抵抗 R を加えたときの s の変化とトルク一定条件
+5. **【優先】** 第8回 Y-Δ始動 — 電流・トルクがともに 1/3 になる理由
+6. **【総仕上げ】** 第2・3回 すべり・誘導起電力の基礎公式の暗記`
+};
+
+const exams = [
+  {date:'2026-07-14', day:'火', time:'10:50-12:30', subject:'電子回路Ⅱ', weight:'18%', priority:'最優先①（最も早い試験）'},
+  {date:'2026-07-17', day:'金', time:'10:50-12:30', subject:'音響工学', weight:'25%（最重点）', priority:'最優先②（最も重い科目）'},
+  {date:'2026-07-21', day:'火', time:'13:20-15:00', subject:'制御の基礎', weight:'15%', priority:'優先③'},
+  {date:'2026-07-22', day:'水', time:'未確定', subject:'英語特殊A', weight:'対象外', priority:'日程未確定（おそらく7/22）', tentative:true},
+  {date:'2026-07-23', day:'木', time:'10:50-12:30', subject:'電子デバイス', weight:'15%', priority:'優先④（同日2科目）'},
+  {date:'2026-07-23', day:'木', time:'13:20-15:00', subject:'電気機器Ⅱ', weight:'15%', priority:'優先④（同日2科目）'},
+  {date:'2026-07-24', day:'金', time:'09:00-10:40', subject:'オプトロニクス', weight:'12%', priority:'優先⑤（最後・最短スパート）'},
+];
+
+// 日々の進捗記録。チャットで報告された内容をここに追記していく。
+// status: 'done'（できた） / 'partial'（一部できた） / 'skip'（できなかった・見送り）
+const _baseProgress = {
+  '2026-06-15': {status: 'skip', note: 'バイトが長引き着手できず'},
+  '2026-06-16': {status: 'partial', note: '電子回路Ⅱ 第1〜5回ノート見返し・理解度6割'},
+};
+function _getLocal() {
+  try { return JSON.parse(localStorage.getItem('studyProgress') || '{}'); }
+  catch(e) { return {}; }
+}
+function _setLocal(data) {
+  try { localStorage.setItem('studyProgress', JSON.stringify(data)); return true; }
+  catch(e) { return false; }
+}
+const _localProgress = _getLocal();
+const progress = {..._baseProgress, ..._localProgress};
+
+const phases = [
+  {
+    id:1, name:'基礎固め①', start:'2026-06-15', end:'2026-06-21',
+    summary:'音響工学（苦手分野の式変形）＋電子回路Ⅱ全体把握',
+    days:[
+      {date:'2026-06-15', label:'6/15 月', focus:'電子回路Ⅱ', detail:'終日空き／ノート全体を1周し全体像を掴む'},
+      {date:'2026-06-16', label:'6/16 火', focus:'音響工学', detail:'朝(〜10:50)＋15:00以降／第1回から式変形を復習開始（苦手分野）'},
+      {date:'2026-06-17', label:'6/17 水', focus:'制御の基礎', detail:'12:30〜17:00（バイト17-23）／ノートを軽く読み返し、Laplace・伝達関数の用語確認'},
+      {date:'2026-06-18', label:'6/18 木', focus:'音響工学＋電子回路Ⅱ', detail:'朝(〜10:50)＋17:00以降／バイトなし。音響工学の式変形を継続し、余力で電子回路Ⅱの通読を進める'},
+      {date:'2026-06-19', label:'6/19 金', focus:'学習ほぼなし', detail:'バイト17-23のため学習時間はほぼ無し前提'},
+      {date:'2026-06-20', label:'6/20 土', focus:'音響工学（メイン）', detail:'終日空き／土曜にやや多めに式変形・導出練習を配置'},
+      {date:'2026-06-21', label:'6/21 日', focus:'電子回路Ⅱ＋音響工学（復習）', detail:'15:00以降（バイト9-15）／電子回路Ⅱのノート通読を仕上げ、音響工学の今週の内容を軽く復習'},
+    ],
+    bullets:[
+      '音響工学: 第1回から順に、波動方程式・複素数によるインピーダンス・dB計算の式変形を復習。「導出を自分の手で再現できるか」を確認しながら進める。',
+      '電子回路Ⅱ: 試験が最も早いので、ノート全体を1周して全体像を掴む。',
+      '制御の基礎: ノートを軽く読み返す程度（Laplace/伝達関数の用語確認）。',
+      '電子デバイス・電気機器Ⅱ・オプトロニクスはまだ着手しなくてOK。',
+    ]
+  },
+  {
+    id:2, name:'基礎固め②', start:'2026-06-22', end:'2026-06-28',
+    summary:'制御の基礎演習開始＋他3科目を週1で通読',
+    bullets:[
+      '音響工学: 苦手分野の式変形を中心に継続。問題集の該当範囲を1〜2問解く。',
+      '電子回路Ⅱ: 問題集を使った演習を開始。',
+      '制御の基礎: 本格的に演習開始（Routh-Hurwitz、伝達関数の問題演習）。',
+      '電子デバイス・電気機器Ⅱ・オプトロニクス: それぞれ週1回、ノートを通読してテスト範囲の全体像を確認（各1〜1.5時間）。',
+      'バイト注意: 6/22(月)9-15 → 月曜は午後(15時以降)から電子回路Ⅱを開始。',
+    ]
+  },
+  {
+    id:3, name:'演習強化期間', start:'2026-06-29', end:'2026-07-05',
+    summary:'演習強化、他3科目週2回',
+    bullets:[
+      '電子回路Ⅱ: 試験まで2週間。問題集を中心に仕上げに入る。',
+      '音響工学: 苦手分野の演習を継続（このフェーズでも最重点を維持）。',
+      '制御の基礎: 問題演習を継続。',
+      '電子デバイス・電気機器Ⅱ・オプトロニクス: 各科目週2回のセッションを確保し、ノートの内容を問題集レベルまで定着させる。',
+      'バイト注意: 6/29(月)11-15, 7/1(水)17-21:30, 7/3(金)17-22:30 → 月曜は午前(〜11時)に短時間だけ電子回路Ⅱ。水・金は学習時間が減るので火・土・日に振り替え。',
+    ]
+  },
+  {
+    id:4, name:'直前準備期間', start:'2026-07-06', end:'2026-07-12',
+    summary:'電子回路Ⅱ・音響工学の最終仕上げ前倒し',
+    bullets:[
+      '電子回路Ⅱ: 最終仕上げ（試験は7/14）。問題集を解き直し、苦手な計算を洗い出す。',
+      '音響工学: 電子回路Ⅱに次ぐ優先度で最終仕上げの準備（試験は7/17）。',
+      '制御の基礎: 演習継続、苦手分野の洗い出し。',
+      '電子デバイス・電気機器Ⅱ・オプトロニクス: 維持（週1〜2回）。',
+      'バイト注意: 7/6(月)9-15, 7/10(金)17-22:30 → 直前期で最も学習時間が必要な週。月曜午後・火〜木・土日にしっかり時間を確保し、電子回路Ⅱ・音響工学の最終仕上げに充てる。',
+    ]
+  },
+  {
+    id:5, name:'試験第1週', start:'2026-07-13', end:'2026-07-17',
+    summary:'電子回路Ⅱ → 音響工学（試験連続週）',
+    days:[
+      {date:'2026-07-13', label:'7/13 月', focus:'電子回路Ⅱ最終確認', detail:'バイトなし、終日空き／問題集を通しで'},
+      {date:'2026-07-14', label:'7/14 火', focus:'電子回路Ⅱ試験 → 音響工学', detail:'10:50-12:30試験。試験後（15:00〜）から音響工学に切替'},
+      {date:'2026-07-15', label:'7/15 水', focus:'音響工学集中', detail:'12:30以降空き'},
+      {date:'2026-07-16', label:'7/16 木', focus:'音響工学集中', detail:'朝+17:00以降空き／苦手分野の総点検'},
+      {date:'2026-07-17', label:'7/17 金', focus:'音響工学試験 → 制御の基礎', detail:'10:50-12:30試験。試験後（17:00〜）から制御の基礎へ切替'},
+    ],
+    bullets:[
+      '7/13(月): 電子回路Ⅱ最終確認に1日を集中投下。',
+      '7/14(火): 午前に電子回路Ⅱ試験 → 試験後は即座に音響工学へ全力シフト。',
+      '7/15(水)〜7/16(木): 音響工学に集中（苦手な式変形を試験形式で再確認）。',
+      '7/17(金): 午前に音響工学試験 → 試験後は制御の基礎へシフト。',
+    ]
+  },
+  {
+    id:6, name:'試験第2週', start:'2026-07-18', end:'2026-07-24',
+    summary:'制御 → 電子デバイス/電気機器Ⅱ → オプトロニクス',
+    days:[
+      {date:'2026-07-18', label:'7/18 土', focus:'制御の基礎集中', detail:'終日空き'},
+      {date:'2026-07-19', label:'7/19 日', focus:'制御の基礎集中＋英語特殊A対策開始', detail:'終日空き／英語特殊Aは内容が軽いため毎日短時間でOK（試験予想日7/22の3日前）'},
+      {date:'2026-07-20', label:'7/20 月', focus:'制御の基礎最終確認＋英語特殊A継続', detail:'終日空き（バイト予定なし）'},
+      {date:'2026-07-21', label:'7/21 火', focus:'制御の基礎試験 → 英語特殊A最終確認', detail:'13:20-15:00試験。試験後（15:00〜）は翌日試験想定の英語特殊Aを優先'},
+      {date:'2026-07-22', label:'7/22 水', focus:'英語特殊A試験（未確定）→ 電子デバイス・電気機器Ⅱ', detail:'英語特殊A試験後、電子デバイス・電気機器Ⅱを集中対策'},
+      {date:'2026-07-23', label:'7/23 木', focus:'電子デバイス試験・電気機器Ⅱ試験 → オプトロニクス', detail:'10:50-12:30、13:20-15:00試験。試験後（15:10〜）からオプトロニクスへ全振り'},
+      {date:'2026-07-24', label:'7/24 金', focus:'オプトロニクス試験', detail:'09:00-10:40試験。前日夜〜当日朝まで最終確認'},
+    ],
+    bullets:[
+      '7/18(土): 制御の基礎に集中。',
+      '7/19(日)〜7/20(月): 制御の基礎を継続しつつ、英語特殊Aの対策を開始（内容が軽いため3日前から毎日短時間でOK）。',
+      '7/21(火): 午後に制御の基礎試験 → 試験後は英語特殊Aの最終確認を優先（翌日7/22に試験がある想定）。',
+      '7/22(水): 英語特殊Aの試験（未確定）→ 試験後は電子デバイス・電気機器Ⅱを集中対策。',
+      '7/23(木): 午前に電子デバイス試験、午後に電気機器Ⅱ試験 → 両試験終了後、夜から翌朝までオプトロニクスへ全振り。',
+      '7/24(金): 朝にオプトロニクス試験 → 終了。',
+    ]
+  },
+];
+
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+const today = new Date();
+const todayStr = ymd(today);
+
+function calcStats() {
+  const subjKw = {
+    '電子回路Ⅱ':['電子回路'], '音響工学':['音響工学'], '制御の基礎':['制御'],
+    '電子デバイス':['電子デバイス'], '電気機器Ⅱ':['電気機器'], 'オプトロニクス':['オプトロニクス']
+  };
+  const allDays = phases.flatMap(p => p.days||[]);
+  const recDates = Object.keys(progress).filter(d => d <= todayStr).sort();
+  let earned = 0;
+  recDates.forEach(d => {
+    if(progress[d].status==='done') earned+=1;
+    else if(progress[d].status==='partial') earned+=0.5;
+  });
+  const overallPct = recDates.length>0 ? Math.round(earned/recDates.length*100) : null;
+
+  const examDanger = {};
+  exams.forEach(e => {
+    if(e.tentative) return;
+    const daysLeft = Math.round((new Date(e.date)-new Date(todayStr))/86400000);
+    if(daysLeft<0){examDanger[e.subject]={level:'past'};return;}
+    const kws = subjKw[e.subject]||[e.subject];
+    const matchDay = d => d.focus && kws.some(k=>d.focus.includes(k));
+    const elapsed = allDays.filter(d => d.date<todayStr && matchDay(d));
+    const withRec = elapsed.filter(d => progress[d.date]);
+    let subEarned = 0;
+    withRec.forEach(d => {
+      if(progress[d.date].status==='done') subEarned+=1;
+      else if(progress[d.date].status==='partial') subEarned+=0.5;
+    });
+    const elapsedPct = withRec.length>0 ? Math.round(subEarned/withRec.length*100) : 100;
+    let level = 'safe';
+    if(daysLeft<=3 && elapsedPct<70) level='critical';
+    else if(daysLeft<=7 && elapsedPct<50) level='danger';
+    else if(withRec.length>=1 && elapsedPct<50 && daysLeft<=28) level='caution';
+    examDanger[e.subject]={level, elapsedPct, daysLeft};
+  });
+
+  const missedDays  = allDays.filter(d=>d.date<todayStr&&progress[d.date]?.status==='skip');
+  const partialDays = allDays.filter(d=>d.date<todayStr&&progress[d.date]?.status==='partial');
+  return {overallPct, examDanger, missedDays, partialDays};
+}
+const stats = calcStats();
+
+// 試験日程
+const examCard = document.getElementById('examCard');
+const upcoming = exams.filter(e => e.date >= todayStr && !e.tentative);
+const nextExam = upcoming.length ? upcoming[0] : null;
+
+exams.forEach(e => {
+  const row = document.createElement('div');
+  row.className = 'exam-row' + (e.date < todayStr ? ' done' : '');
+  const isNext = nextExam && e.date === nextExam.date && e.subject === nextExam.subject;
+  const dng = stats.examDanger[e.subject];
+  const dngLabel = {safe:'安全',caution:'要注意',danger:'危険',critical:'緊急'};
+  const dngBadge = dng && dngLabel[dng.level]
+    ? `<span class="danger-badge ${dng.level}">${dngLabel[dng.level]}</span>` : '';
+  row.innerHTML = `
+    <div class="exam-date${isNext ? ' next' : ''}">
+      ${e.date.slice(5).replace('-','/')} ${e.day}
+      <span class="time">${e.time.split('-')[0]}</span>
+    </div>
+    <div style="flex:1">
+      <p class="exam-name" style="display:flex;align-items:center;gap:6px">${e.subject}${e.tentative ? '<span class="status-badge partial" style="margin-left:8px;">未確定</span>' : ''}${dngBadge}</p>
+      <p class="exam-meta">配分 ${e.weight} ・ ${e.priority}${dng&&dng.level!=='past'&&dng.elapsedPct<100?' ・ 実績'+dng.elapsedPct+'%':''}</p>
+    </div>
+    ${mdNotes[e.subject] ? `<button class="note-btn" onclick="openModal('${e.subject}')">📖 ノート</button>` : ''}`;
+  examCard.appendChild(row);
+});
+
+// 統計
+const statGrid = document.getElementById('statGrid');
+let daysToNext = '-';
+if (nextExam) {
+  const diff = Math.round((new Date(nextExam.date) - new Date(todayStr)) / 86400000);
+  daysToNext = diff === 0 ? '本日！' : diff + '日';
+}
+const currentPhase = phases.find(p => todayStr >= p.start && todayStr <= p.end);
+statGrid.innerHTML = `
+  <div class="stat">
+    <p class="label">今日の日付</p>
+    <p class="value">${todayStr.slice(5).replace('-','/')}</p>
+  </div>
+  <div class="stat accent">
+    <p class="label">現在のフェーズ</p>
+    <p class="value">${currentPhase ? 'フェーズ' + currentPhase.id : '計画期間外'}</p>
+  </div>
+  <div class="stat">
+    <p class="label">次の試験まで</p>
+    <p class="value">${nextExam ? daysToNext + '（' + nextExam.subject + '）' : '全試験終了'}</p>
+  </div>
+  <div class="stat">
+    <p class="label">計画達成率</p>
+    <p class="value">${stats.overallPct !== null ? stats.overallPct + '%' : '—'}</p>
+    ${stats.overallPct !== null ? `<div class="prog-wrap"><div class="prog-fill ${stats.overallPct>=70?'good':stats.overallPct>=40?'warn':'bad'}" style="width:${stats.overallPct}%"></div></div>` : ''}
+  </div>
+`;
+
+// 進捗記録フォーム
+function editProgress(date, status, note) {
+  document.getElementById('progDate').value = date;
+  document.getElementById('progStatus').value = status;
+  document.getElementById('progNote').value = note || '';
+  document.getElementById('progressFormCard').scrollIntoView({behavior:'smooth', block:'center'});
+  document.getElementById('progNote').focus();
+}
+function saveProgress() {
+  const date = document.getElementById('progDate').value;
+  const status = document.getElementById('progStatus').value;
+  const note = document.getElementById('progNote').value.trim();
+  if (!date) return;
+  const local = JSON.parse(localStorage.getItem('studyProgress') || '{}');
+  local[date] = {status, note};
+  _setLocal(local);
+  location.reload();
+}
+function deleteProgress(date) {
+  const local = JSON.parse(localStorage.getItem('studyProgress') || '{}');
+  delete local[date];
+  _setLocal(local);
+  location.reload();
+}
+const progressFormCard = document.getElementById('progressFormCard');
+progressFormCard.innerHTML = `
+  <p class="form-label" style="margin:0 0 10px">日付・結果・メモを入力して「記録する」を押してください</p>
+  <div class="form-row">
+    <div class="form-group">
+      <span class="form-label">日付</span>
+      <input type="date" id="progDate" value="${todayStr}" class="form-input">
+    </div>
+    <div class="form-group">
+      <span class="form-label">結果</span>
+      <select id="progStatus" class="form-input">
+        <option value="done">完了</option>
+        <option value="partial">一部完了</option>
+        <option value="skip">できなかった</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex:1;min-width:180px">
+      <span class="form-label">メモ（教科・内容など）</span>
+      <input type="text" id="progNote" placeholder="例：電子回路Ⅱ 第6〜9回通読" class="form-input">
+    </div>
+    <button class="form-btn" onclick="saveProgress()">記録する</button>
+  </div>`;
+
+// スケジュール調整カード
+const catchupCard = document.getElementById('catchupCard');
+if(stats.missedDays.length===0 && stats.partialDays.length===0){
+  catchupCard.innerHTML='<p class="note" style="margin:0">遅れなし — 計画通り進んでいます。</p>';
+} else {
+  const curEnd = phases.find(p=>todayStr>=p.start&&todayStr<=p.end)?.end || '';
+  const futureDays = phases.flatMap(p=>p.days||[]).filter(d=>d.date>todayStr&&(!curEnd||d.date<=curEnd));
+  const focusOverlap = (f1,f2) => {
+    if(!f1||!f2) return false;
+    return f2.replace(/（[^）]*）/g,'').split('＋').map(s=>s.trim()).filter(Boolean).some(k=>k&&f1.includes(k));
+  };
+  const items = [
+    ...stats.missedDays.map(d => {
+      const nxt = futureDays.find(f=>focusOverlap(f.focus, d.focus));
+      return `<li><strong>${d.label}</strong> スキップ（${d.focus||'未指定'}）<br><span style="color:var(--accent-text2)">→ ${nxt ? nxt.label+' に振り替え推奨' : '今週の空き時間で補完してください'}</span></li>`;
+    }),
+    ...stats.partialDays.map(d => {
+      const pr = progress[d.date];
+      return `<li><strong>${d.label}</strong> 途中完了（${pr?.note||d.focus||''}）<br><span style="color:var(--accent-text2)">→ 残りは今週中に補完推奨</span></li>`;
+    })
+  ];
+  catchupCard.innerHTML=`<p style="font-size:12px;color:var(--text2);margin:0 0 6px">遅れ・未完了の項目と振り替え提案</p><ul class="bullets" style="margin:0">${items.join('')}</ul>`;
+}
+
+// 今日の予定
+const todayCard = document.getElementById('todayCard');
+let todayHtml = '';
+if (currentPhase) {
+  const todayDay = (currentPhase.days || []).find(d => d.date === todayStr);
+  if (todayDay) {
+    todayHtml = `<p style="margin:0 0 4px; font-size:12px; color:var(--text2);">今日の重点（フェーズ${currentPhase.id}）</p>
+      <p style="font-weight:600; font-size:16px; margin:0;">${todayDay.focus}</p>
+      <p class="note" style="margin-top:4px;">${todayDay.detail}</p>`;
+  } else {
+    todayHtml = `<p style="margin:0 0 4px; font-size:12px; color:var(--text2);">今週の重点（フェーズ${currentPhase.id}: ${currentPhase.name}）</p>
+      <p style="font-weight:600; font-size:16px; margin:0 0 4px;">${currentPhase.summary}</p>
+      <p class="note">詳細は下のフェーズ${currentPhase.id}を開いて確認してください。</p>`;
+  }
+} else {
+  todayHtml = `<p style="margin:0;">計画期間（6/15〜7/24）の外です。</p>`;
+}
+const todayProgress = progress[todayStr];
+if (todayProgress) {
+  const statusLabel = {done:'完了', partial:'一部', skip:'見送り'};
+  todayHtml += `<div class="progress-note" style="margin-top:8px;">
+    <span class="status-badge ${todayProgress.status}">${statusLabel[todayProgress.status] || todayProgress.status}</span>
+    ${todayProgress.note ? ' ' + todayProgress.note : ''}
+  </div>`;
+}
+todayCard.innerHTML = todayHtml;
+
+// 進捗履歴
+const progressHistory = document.getElementById('progressHistory');
+const allDays = phases.flatMap(p => p.days || []);
+const statusLabel = {done:'完了', partial:'一部', skip:'見送り'};
+const entries = Object.keys(progress).sort().reverse();
+if (entries.length === 0) {
+  progressHistory.innerHTML = `<p class="note" style="margin:0;">まだ記録がありません。今日の進捗をチャットで報告すると、ここに表示されます。</p>`;
+} else {
+  progressHistory.innerHTML = entries.map(date => {
+    const pr = progress[date];
+    const dayInfo = allDays.find(d => d.date === date);
+    const label = dayInfo ? dayInfo.label : date.slice(5).replace('-','/');
+    const isLocal = !!_localProgress[date];
+    return `<div class="exam-row">
+      <div class="exam-date">${label}</div>
+      <div style="flex:1">
+        <span class="status-badge ${pr.status}">${statusLabel[pr.status] || pr.status}</span>
+        ${pr.note ? `<span class="exam-meta" style="display:block; margin-top:4px;">${pr.note}</span>` : ''}
+      </div>
+      <button class="del-btn" onclick="editProgress('${date}','${pr.status}','${(pr.note||'').replace(/'/g,String.fromCharCode(39))}')">編集</button>
+      ${isLocal ? `<button class="del-btn" onclick="deleteProgress('${date}')">削除</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// フェーズ一覧
+const phasesDiv = document.getElementById('phases');
+phases.forEach(p => {
+  const det = document.createElement('details');
+  const isCurrent = currentPhase && currentPhase.id === p.id;
+  if (isCurrent) det.open = true;
+  const range = p.start.slice(5).replace('-','/') + '〜' + p.end.slice(5).replace('-','/');
+
+  let inner = '';
+  if (p.days) {
+    const statusLabel = {done:'完了', partial:'一部', skip:'見送り'};
+    inner += p.days.map(d => {
+      const isToday = d.date === todayStr;
+      const pr = progress[d.date];
+      return `<div class="day-row${isToday ? ' today' : ''}">
+        <div class="day-label">${d.label}</div>
+        <div class="day-content">
+          <div class="day-head">
+            <strong>${d.focus}</strong>
+            ${pr ? `<span class="status-badge ${pr.status}">${statusLabel[pr.status] || pr.status}</span>` : ''}
+          </div>
+          <span style="color:var(--text2)">${d.detail}</span>
+          ${pr && pr.note ? `<div class="progress-note">記録: ${pr.note}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  inner += '<ul class="bullets">' + p.bullets.map(b => `<li>${b}</li>`).join('') + '</ul>';
+
+  det.innerHTML = `<summary>
+      ${isCurrent ? '<span class="badge">現在</span>' : ''}
+      フェーズ${p.id}: ${p.name}
+      <span class="phase-range">${range}</span>
+    </summary>${inner}`;
+  phasesDiv.appendChild(det);
+});
+
+let _mTab='note',_mSubj='';
+function openModal(subj){
+  _mSubj=subj; _mTab='note';
+  document.getElementById('modalTitle').textContent=subj+' ノート';
+  document.getElementById('tabNote').classList.add('active');
+  document.getElementById('tabProb').classList.remove('active');
+  document.getElementById('tabPriority').classList.remove('active');
+  _mRender();
+  document.getElementById('noteModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('noteModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+function switchTab(tab){
+  _mTab=tab;
+  document.getElementById('tabNote').classList.toggle('active',tab==='note');
+  document.getElementById('tabProb').classList.toggle('active',tab==='prob');
+  document.getElementById('tabPriority').classList.toggle('active',tab==='priority');
+  _mRender();
+}
+function _mRender(){
+  const data=mdNotes[_mSubj]; if(!data) return;
+  let md;
+  if(_mTab==='priority'){md=priorityData[_mSubj]||'（優先度データなし）';}
+  else{md=_mTab==='note'?data.note:data.prob;}
+  const body=document.getElementById('modalBody');
+  body.innerHTML=renderMd(md||'（データなし）');
+  body.scrollTop=0;
+  if(typeof renderMathInElement!=='undefined'){
+    renderMathInElement(body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});
+  }
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+function renderMd(md){
+  const toks=[];
+  const save=s=>{toks.push(s);return'\x00T'+(toks.length-1)+'\x00';};
+  let s=md
+    .replace(/```[\s\S]*?```/g,save)
+    .replace(/`[^`\n]+`/g,save)
+    .replace(/\$\$[\s\S]*?\$\$/g,save)
+    .replace(/\$[^\n$]*?\$/g,save);
+  s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const out=[],lines=s.split('\n');
+  let i=0;
+  while(i<lines.length){
+    const line=lines[i],t=line.trim();
+    if(!t){i++;continue;}
+    if(/^-{3,}$/.test(t)){out.push('<hr>');i++;continue;}
+    if(t.startsWith('#### ')){out.push('<h4>'+inl(t.slice(5))+'</h4>');i++;continue;}
+    if(t.startsWith('### ')) {out.push('<h3>'+inl(t.slice(4))+'</h3>');i++;continue;}
+    if(t.startsWith('## '))  {out.push('<h2>'+inl(t.slice(3))+'</h2>');i++;continue;}
+    if(t.startsWith('# '))   {out.push('<h1>'+inl(t.slice(2))+'</h1>');i++;continue;}
+    if(t.startsWith('> '))   {out.push('<blockquote>'+inl(t.slice(2))+'</blockquote>');i++;continue;}
+    if(t.startsWith('|')&&i+1<lines.length&&/^\|[\s\-:|]+\|/.test(lines[i+1].trim())){
+      const rows=[];
+      while(i<lines.length&&lines[i].trim().startsWith('|'))rows.push(lines[i++].trim());
+      const pr=r=>r.replace(/^\||\|$/g,'').split('|').map(c=>inl(c.trim()));
+      const hd=pr(rows[0]).map(c=>'<th>'+c+'</th>').join('');
+      const bd=rows.slice(2).map(r=>'<tr>'+pr(r).map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('');
+      out.push('<table><thead><tr>'+hd+'</tr></thead><tbody>'+bd+'</tbody></table>');
+      continue;
+    }
+    if(/^[-*] /.test(t)||/^\d+\. /.test(t)){
+      const isOl=/^\d+\. /.test(t);
+      const items=[];
+      while(i<lines.length){
+        const lt=lines[i].trim();
+        if(/^[-*] /.test(lt)){items.push(inl(lt.replace(/^[-*] /,'')));i++;}
+        else if(/^\d+\. /.test(lt)){items.push(inl(lt.replace(/^\d+\. /,'')));i++;}
+        else break;
+      }
+      out.push('<'+(isOl?'ol':'ul')+'>'+items.map(x=>'<li>'+x+'</li>').join('')+'</'+(isOl?'ol':'ul')+'>');
+      continue;
+    }
+    const ps=[];
+    while(i<lines.length){
+      const lt=lines[i].trim();
+      if(!lt||lt.startsWith('#')||lt.startsWith('|')||/^[-*] /.test(lt)||/^-{3,}$/.test(lt)||/^\d+\. /.test(lt))break;
+      ps.push(inl(lt));i++;
+    }
+    if(ps.length)out.push('<p>'+ps.join('<br>')+'</p>');
+  }
+  return out.join('\n').replace(/\x00T(\d+)\x00/g,(_,idx)=>{
+    const tok=toks[+idx];
+    if(tok.startsWith('```')){
+      const code=tok.replace(/^```\w*\n?/,'').replace(/\n?```$/,'');
+      return '<pre><code>'+code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</code></pre>';
+    }
+    if(tok.startsWith('`')){
+      return '<code>'+tok.slice(1,-1).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</code>';
+    }
+    return tok;
+  });
+}
+function inl(s){
+  return s
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/~~(.+?)~~/g,'<del>$1</del>');
+}
+</script>
+
+<div id="noteModal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <p class="modal-title" id="modalTitle">ノート</p>
+      <button class="modal-close" onclick="closeModal()">✕ 閉じる</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tabNote" onclick="switchTab('note')">チートシート</button>
+      <button class="modal-tab" id="tabProb" onclick="switchTab('prob')">問題集</button>
+      <button class="modal-tab" id="tabPriority" onclick="switchTab('priority')">★ 優先度</button>
+    </div>
+    <div class="modal-body md" id="modalBody"></div>
+  </div>
+</div>
+</body>
+</html>
