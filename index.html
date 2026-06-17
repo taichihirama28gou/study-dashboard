@@ -879,8 +879,9 @@ function calcStats() {
     const daysLeft = Math.round((new Date(e.date)-new Date(todayStr))/86400000);
     if(daysLeft<0){examDanger[e.subject]={level:'past'};return;}
     const kws = subjKw[e.subject]||[e.subject];
-    const matchDay = d => d.focus && kws.some(k=>d.focus.includes(k));
-    const elapsed = allDays.filter(d => d.date<todayStr && matchDay(d));
+    const matchDay  = d => d.focus && kws.some(k=>d.focus.includes(k));
+    const matchNote = d => progress[d.date] && kws.some(k=>(progress[d.date].note||'').includes(k));
+    const elapsed = allDays.filter(d => d.date<todayStr && (matchDay(d) || matchNote(d)));
     const withRec = elapsed.filter(d => progress[d.date]);
     let subEarned = 0;
     const allKws = Object.values(subjKw).flat();
