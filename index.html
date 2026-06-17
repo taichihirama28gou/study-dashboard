@@ -883,9 +883,15 @@ function calcStats() {
     const elapsed = allDays.filter(d => d.date<todayStr && matchDay(d));
     const withRec = elapsed.filter(d => progress[d.date]);
     let subEarned = 0;
+    const allKws = Object.values(subjKw).flat();
     withRec.forEach(d => {
-      if(progress[d.date].status==='done') subEarned+=1;
-      else if(progress[d.date].status==='partial') subEarned+=0.5;
+      const pr = progress[d.date];
+      const note = pr.note || '';
+      const noteHasThis  = kws.some(k => note.includes(k));
+      const noteHasOther = allKws.filter(k => !kws.includes(k)).some(k => note.includes(k));
+      if (noteHasOther && !noteHasThis) return;
+      if(pr.status==='done') subEarned+=1;
+      else if(pr.status==='partial') subEarned+=0.5;
     });
     const elapsedPct = withRec.length>0 ? Math.round(subEarned/withRec.length*100) : 100;
     let level = 'safe';
