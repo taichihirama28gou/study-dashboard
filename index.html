@@ -869,13 +869,15 @@ function calcStats() {
     '電子デバイス':['電子デバイス'], '電気機器Ⅱ':['電気機器'], 'オプトロニクス':['オプトロニクス']
   };
   const allDays = phases.flatMap(p => p.days||[]);
-  const recDates = Object.keys(progress).filter(d => d <= todayStr).sort();
+  const pastPlannedDays = allDays.filter(d => d.date < todayStr);
   let earned = 0;
-  recDates.forEach(d => {
-    if(progress[d].status==='done') earned+=1;
-    else if(progress[d].status==='partial') earned+=0.5;
+  pastPlannedDays.forEach(d => {
+    const rec = progress[d.date];
+    if(!rec) return;
+    if(rec.status==='done') earned+=1;
+    else if(rec.status==='partial') earned+=0.5;
   });
-  const overallPct = recDates.length>0 ? Math.round(earned/recDates.length*100) : null;
+  const overallPct = pastPlannedDays.length>0 ? Math.round(earned/pastPlannedDays.length*100) : null;
 
   const examDanger = {};
   exams.forEach(e => {
