@@ -1079,6 +1079,7 @@ async function saveProgress() {
   local[date] = {status, note};
   _setLocal(local);
   if(_fsHandle) try { await _fsWrite(_fsHandle, _buildFileData(local)); } catch(e) { console.error('ファイル書き込み失敗:',e); }
+  localStorage.setItem('autoRequestAI','1');
   location.reload();
 }
 async function deleteProgress(date) {
@@ -1207,6 +1208,10 @@ function _initAiArea(){
   const saved=_getAISuggestion();
   if(saved){area.innerHTML=_showAISuggestionCard(saved.text,saved.generatedAt);}
   else if(stats.missedDays.length>0||stats.partialDays.length>0){area.innerHTML=_initAiBtn();}
+  if(localStorage.getItem('autoRequestAI')){
+    localStorage.removeItem('autoRequestAI');
+    requestAISuggestion();
+  }
 }
 
 // 振替ロジック（catchupCard・フェーズ両方で共用）
