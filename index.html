@@ -126,6 +126,10 @@
   .form-btn:hover{background:#3b82f6;color:#fff;}
   body.dark .form-btn{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.08);color:#00e676;}
   body.dark .form-btn:hover{background:#00e676;color:#080c10;border-color:#00e676;}
+  .ai-result{white-space:pre-wrap;font-size:13px;line-height:1.8;color:var(--text);}
+  .ai-btn{font-family:'DM Mono',ui-monospace,monospace;font-size:11px;font-weight:500;padding:4px 12px;border-radius:6px;border:1px solid var(--border-hi);background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .15s;}
+  .ai-btn:hover{border-color:var(--accent-text2);color:var(--accent-text2);}
+  .ai-key-input{flex:1;font-family:'DM Mono',ui-monospace,monospace;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--border-hi);background:var(--bg);color:var(--text);}
   .del-btn{font-family:'DM Mono',ui-monospace,monospace;font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;}
   .del-btn:hover{background:var(--red-bg);color:var(--red-text);border-color:rgba(225,29,72,.3);}
   .note-btn{font-family:'DM Mono',ui-monospace,monospace;font-size:10px;padding:3px 9px;border-radius:5px;border:1px solid var(--border-hi);background:transparent;color:var(--text3);cursor:pointer;font-weight:700;flex-shrink:0;white-space:nowrap;transition:all .15s;}
@@ -212,6 +216,7 @@
 
   <h2>スケジュール調整</h2>
   <div class="card" id="catchupCard"></div>
+  <div id="aiSuggestionArea"></div>
 
   <h2>進捗を記録</h2>
   <div class="card" id="progressFormCard"></div>
@@ -763,6 +768,93 @@ function _setLocal(data) {
 const _localProgress = _getLocal();
 const progress = {..._baseProgress, ..._localProgress};
 
+// File System Access API（progress.json への永続保存）
+let _fsHandle = null;
+function _idbOpen() {
+  return new Promise(res => {
+    const r = indexedDB.open('spDB',1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('h');
+    r.onsuccess = e => res(e.target.result);
+    r.onerror = () => res(null);
+  });
+}
+async function _idbGet() {
+  const db = await _idbOpen(); if(!db) return null;
+  return new Promise(res => {
+    const g = db.transaction('h','readonly').objectStore('h').get('f');
+    g.onsuccess = () => res(g.result||null); g.onerror = ()=>res(null);
+  });
+}
+async function _idbSet(h) {
+  const db = await _idbOpen(); if(!db) return;
+  return new Promise(res => {
+    const tx = db.transaction('h','readwrite');
+    tx.objectStore('h').put(h,'f');
+    tx.oncomplete=()=>res(); tx.onerror=()=>res();
+  });
+}
+async function _fsRead(h) { return JSON.parse(await (await h.getFile()).text()); }
+async function _fsWrite(h, data) {
+  const w = await h.createWritable();
+  await w.write(JSON.stringify(data,null,2)); await w.close();
+}
+function _updateFsStatus(name, ok) {
+  const el = document.getElementById('fsStatus');
+  if(!el) return;
+  el.textContent = ok ? '✓ ' + name : '未リンク';
+  el.style.color = ok ? 'var(--green-text)' : 'var(--text3)';
+}
+async function _initFS() {
+  if(!window.showOpenFilePicker) return;
+  _fsHandle = await _idbGet(); if(!_fsHandle) return;
+  let perm;
+  try { perm = await _fsHandle.queryPermission({mode:'readwrite'}); }
+  catch(e) { _fsHandle=null; return; }
+  if(perm==='denied') { _fsHandle=null; return; }
+  if(perm!=='granted') {
+    perm = await _fsHandle.requestPermission({mode:'readwrite'});
+    if(perm!=='granted') { _fsHandle=null; return; }
+  }
+  try {
+    const fileData = await _fsRead(_fsHandle);
+    const {aiSuggestion: fileSuggestion, ...fileProgress} = fileData;
+    const localData = _getLocal();
+    const merged = {...localData, ...fileProgress};
+    let changed = false;
+    if(JSON.stringify(merged)!==JSON.stringify(localData)){_setLocal(merged);changed=true;}
+    const localSuggestion = localStorage.getItem('aiSuggestion');
+    if(fileSuggestion && JSON.stringify(fileSuggestion)!==localSuggestion){
+      localStorage.setItem('aiSuggestion',JSON.stringify(fileSuggestion));changed=true;
+    }
+    if(changed){location.reload();return;}
+  } catch(e) {}
+  _updateFsStatus(_fsHandle.name, true);
+}
+async function linkProgressFile() {
+  if(!window.showOpenFilePicker){ alert('Chrome/Edge が必要です'); return; }
+  try {
+    const [h] = await window.showOpenFilePicker({
+      types:[{description:'JSON進捗ファイル',accept:{'application/json':['.json']}}]
+    });
+    _fsHandle=h; await _idbSet(h);
+    await _fsWrite(h, _buildFileData(_getLocal()));
+    _updateFsStatus(h.name, true);
+  } catch(e) { if(e.name!=='AbortError') console.error(e); }
+}
+async function createProgressFile() {
+  if(!window.showSaveFilePicker){ alert('Chrome/Edge が必要です'); return; }
+  try {
+    const h = await window.showSaveFilePicker({
+      suggestedName:'progress.json',
+      types:[{description:'JSON進捗ファイル',accept:{'application/json':['.json']}}]
+    });
+    _fsHandle=h; await _idbSet(h);
+    await _fsWrite(h, _buildFileData(_getLocal()));
+    _updateFsStatus(h.name, true);
+  } catch(e) { if(e.name!=='AbortError') console.error(e); }
+}
+_initFS();
+
 const phases = [
   {
     id:1, name:'基礎固め①', start:'2026-06-15', end:'2026-06-21',
@@ -900,11 +992,13 @@ function calcStats() {
       if(pr.status==='done') subEarned+=1;
       else if(pr.status==='partial') subEarned+=0.5;
     });
-    const elapsedPct = withRec.length>0 ? Math.round(subEarned/withRec.length*100) : 100;
+    const elapsedPct = elapsed.length>0 ? Math.round(subEarned/elapsed.length*100) : null;
     let level = 'safe';
-    if(daysLeft<=3 && elapsedPct<70) level='critical';
-    else if(daysLeft<=7 && elapsedPct<50) level='danger';
-    else if(withRec.length>=1 && elapsedPct<50 && daysLeft<=28) level='caution';
+    if(elapsedPct!=null) {
+      if(daysLeft<=3 && elapsedPct<70) level='critical';
+      else if(daysLeft<=7 && elapsedPct<50) level='danger';
+      else if(elapsedPct<50 && daysLeft<=28) level='caution';
+    }
     examDanger[e.subject]={level, elapsedPct, daysLeft};
   });
 
@@ -976,7 +1070,7 @@ function editProgress(date, status, note) {
   var _el=document.getElementById('progressFormCard');window.scrollTo({top:_el.getBoundingClientRect().top+window.scrollY-90,behavior:'smooth'});
   document.getElementById('progNote').focus();
 }
-function saveProgress() {
+async function saveProgress() {
   const date = document.getElementById('progDate').value;
   const status = document.getElementById('progStatus').value;
   const note = document.getElementById('progNote').value.trim();
@@ -984,16 +1078,24 @@ function saveProgress() {
   const local = JSON.parse(localStorage.getItem('studyProgress') || '{}');
   local[date] = {status, note};
   _setLocal(local);
+  if(_fsHandle) try { await _fsWrite(_fsHandle, _buildFileData(local)); } catch(e) { console.error('ファイル書き込み失敗:',e); }
   location.reload();
 }
-function deleteProgress(date) {
+async function deleteProgress(date) {
   const local = JSON.parse(localStorage.getItem('studyProgress') || '{}');
   delete local[date];
   _setLocal(local);
+  if(_fsHandle) try { await _fsWrite(_fsHandle, _buildFileData(local)); } catch(e) {}
   location.reload();
 }
 const progressFormCard = document.getElementById('progressFormCard');
 progressFormCard.innerHTML = `
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-family:'DM Mono',monospace;font-size:10px;">
+    <span style="color:var(--text3)">JSONファイル:</span>
+    <span id="fsStatus" style="color:var(--text3)">未リンク</span>
+    <button class="form-btn" style="padding:3px 10px;font-size:10px" onclick="createProgressFile()">新規作成</button>
+    <button class="form-btn" style="padding:3px 10px;font-size:10px" onclick="linkProgressFile()">既存を開く</button>
+  </div>
   <p class="form-label" style="margin:0 0 10px">日付・結果・メモを入力して「記録する」を押してください</p>
   <div class="form-row">
     <div class="form-group">
@@ -1015,29 +1117,134 @@ progressFormCard.innerHTML = `
     <button class="form-btn" onclick="saveProgress()">記録する</button>
   </div>`;
 
+// AI振替提案
+function _getApiKey(){return localStorage.getItem('anthropicApiKey')||'';}
+function _setApiKey(k){localStorage.setItem('anthropicApiKey',k);}
+function buildAIPrompt(){
+  const daysLeft=e=>Math.round((new Date(e.date)-new Date(todayStr))/86400000);
+  const examLines=exams.filter(e=>!e.tentative&&daysLeft(e)>=0)
+    .map(e=>`・${e.date} ${e.subject}（残${daysLeft(e)}日・配分${e.weight}）`).join('\n');
+  const progLines=Object.entries(progress).filter(([d])=>d<todayStr).sort()
+    .map(([d,r])=>`・${d} [${r.status}] ${r.note||'メモなし'}`).join('\n');
+  const planLines=phases.flatMap(p=>p.days||[]).filter(d=>d.date>=todayStr).slice(0,7)
+    .map(d=>`・${d.label}: ${d.focus}`).join('\n');
+  return `あなたは大学3年生（電気工学）の学習アドバイザーです。以下の情報を基に、スキップ・未完了分の振り替えと今後の優先順位について、具体的かつ簡潔に提案してください（3〜5項目の箇条書き）。
+
+今日: ${todayStr}
+
+【試験スケジュール（未来）】
+${examLines}
+
+【直近の進捗記録】
+${progLines}
+
+【今後の学習計画】
+${planLines}
+
+提案は日本語で、具体的な日付や科目名を含めてください。`;
+}
+async function requestAISuggestion(){
+  const area=document.getElementById('aiSuggestionArea');
+  let key=_getApiKey();
+  if(!key){
+    area.innerHTML=`<div class="card" style="margin-top:.5rem">
+      <p class="form-label" style="margin:0 0 8px">Claude API Key（localStorageに保存）</p>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="password" id="aiKeyInput" class="ai-key-input" placeholder="sk-ant-...">
+        <button class="form-btn" onclick="saveApiKeyAndRun()">保存して実行</button>
+        <button class="ai-btn" onclick="document.getElementById('aiSuggestionArea').innerHTML=''">キャンセル</button>
+      </div></div>`;
+    return;
+  }
+  area.innerHTML=`<div class="card" style="margin-top:.5rem"><p class="note" style="margin:0">AI が提案を生成中...</p></div>`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:600,
+        messages:[{role:'user',content:buildAIPrompt()}]})
+    });
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
+    const data=await res.json();
+    const rawText=data.content?.[0]?.text||'（応答なし）';
+    const suggestionData={text:rawText,generatedAt:todayStr};
+    _setAISuggestion(suggestionData);
+    if(_fsHandle) try{await _fsWrite(_fsHandle,_buildFileData(_getLocal()));}catch(e){}
+    area.innerHTML=_showAISuggestionCard(rawText,todayStr);
+  }catch(e){
+    area.innerHTML=`<div class="card" style="margin-top:.5rem"><p class="note" style="color:var(--red-text);margin:0">エラー: ${e.message}</p>
+      <button class="ai-btn" onclick="_initAiArea()" style="margin-top:8px">戻る</button></div>`;
+  }
+}
+function saveApiKeyAndRun(){const k=(document.getElementById('aiKeyInput')?.value||'').trim();if(!k)return;_setApiKey(k);requestAISuggestion();}
+function _initAiBtn(){return`<button class="ai-btn" onclick="requestAISuggestion()" style="margin-top:.5rem">✦ AIに振替提案を依頼</button>`;}
+function _getAISuggestion(){try{return JSON.parse(localStorage.getItem('aiSuggestion')||'null');}catch(e){return null;}}
+function _setAISuggestion(d){localStorage.setItem('aiSuggestion',JSON.stringify(d));}
+function _buildFileData(prog){const d={...prog};const s=_getAISuggestion();if(s)d.aiSuggestion=s;return d;}
+function _showAISuggestionCard(text,generatedAt){
+  const safe=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+  return`<div class="card" style="margin-top:.5rem;border-left:3px solid var(--accent-text2)">
+    <p style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);margin:0 0 8px;text-transform:uppercase;letter-spacing:.1em">AI提案 (${generatedAt})</p>
+    <div class="ai-result">${safe}</div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="ai-btn" onclick="requestAISuggestion()">再生成</button>
+      <button class="ai-btn" onclick="clearAISuggestionData()" style="color:var(--text3)">提案を削除</button>
+    </div></div>`;
+}
+async function clearAISuggestionData(){
+  localStorage.removeItem('aiSuggestion');
+  if(_fsHandle) try{await _fsWrite(_fsHandle,_buildFileData(_getLocal()));}catch(e){}
+  const area=document.getElementById('aiSuggestionArea');
+  area.innerHTML=(stats.missedDays.length>0||stats.partialDays.length>0)?_initAiBtn():'';
+}
+function _initAiArea(){
+  const area=document.getElementById('aiSuggestionArea');if(!area)return;
+  const saved=_getAISuggestion();
+  if(saved){area.innerHTML=_showAISuggestionCard(saved.text,saved.generatedAt);}
+  else if(stats.missedDays.length>0||stats.partialDays.length>0){area.innerHTML=_initAiBtn();}
+}
+
+// 振替ロジック（catchupCard・フェーズ両方で共用）
+const allFutureDays = phases.flatMap(p=>p.days||[]).filter(d=>d.date>todayStr);
+const focusOverlap = (f1,f2) => {
+  if(!f1||!f2) return false;
+  return f2.replace(/（[^）]*）/g,'').split('＋').map(s=>s.trim()).filter(Boolean).some(k=>k&&f1.includes(k));
+};
+// rescheduleMap: 振替先date → 振替元ラベル[]
+const rescheduleMap = {};
+stats.missedDays.forEach(d => {
+  const nxt = allFutureDays.find(f=>focusOverlap(f.focus, d.focus));
+  if(nxt) { (rescheduleMap[nxt.date] = rescheduleMap[nxt.date]||[]).push(d.label); }
+});
+
 // スケジュール調整カード
 const catchupCard = document.getElementById('catchupCard');
 if(stats.missedDays.length===0 && stats.partialDays.length===0){
   catchupCard.innerHTML='<p class="note" style="margin:0">遅れなし — 計画通り進んでいます。</p>';
 } else {
   const curEnd = phases.find(p=>todayStr>=p.start&&todayStr<=p.end)?.end || '';
-  const futureDays = phases.flatMap(p=>p.days||[]).filter(d=>d.date>todayStr&&(!curEnd||d.date<=curEnd));
-  const focusOverlap = (f1,f2) => {
-    if(!f1||!f2) return false;
-    return f2.replace(/（[^）]*）/g,'').split('＋').map(s=>s.trim()).filter(Boolean).some(k=>k&&f1.includes(k));
-  };
-  const items = [
-    ...stats.missedDays.map(d => {
+  const futureDays = allFutureDays.filter(d=>!curEnd||d.date<=curEnd);
+  const allCatchup = [
+    ...stats.missedDays.map(d => ({...d, type:'miss'})),
+    ...stats.partialDays.map(d => ({...d, type:'partial'}))
+  ].sort((a,b)=>a.date.localeCompare(b.date));
+  const items = allCatchup.map(d => {
+    if(d.type==='miss') {
       const nxt = futureDays.find(f=>focusOverlap(f.focus, d.focus));
       return `<li><strong>${d.label}</strong> スキップ（${d.focus||'未指定'}）<br><span style="color:var(--accent-text2)">→ ${nxt ? nxt.label+' に振り替え推奨' : '今週の空き時間で補完してください'}</span></li>`;
-    }),
-    ...stats.partialDays.map(d => {
+    } else {
       const pr = progress[d.date];
       return `<li><strong>${d.label}</strong> 途中完了（${pr?.note||d.focus||''}）<br><span style="color:var(--accent-text2)">→ 残りは今週中に補完推奨</span></li>`;
-    })
-  ];
+    }
+  });
   catchupCard.innerHTML=`<p style="font-size:12px;color:var(--text2);margin:0 0 6px">遅れ・未完了の項目と振り替え提案</p><ul class="bullets" style="margin:0">${items.join('')}</ul>`;
 }
+_initAiArea();
 
 // 今日の予定
 const todayCard = document.getElementById('todayCard');
@@ -1105,6 +1312,18 @@ phases.forEach(p => {
     inner += p.days.map(d => {
       const isToday = d.date === todayStr;
       const pr = progress[d.date];
+      const isPast = d.date < todayStr;
+      let catchupHtml = '';
+      if(isPast && pr) {
+        if(pr.status==='skip') {
+          const nxt = allFutureDays.find(f=>focusOverlap(f.focus, d.focus));
+          catchupHtml = `<div class="progress-note">→ ${nxt ? nxt.label+' に振り替え推奨' : '空き時間で補完'}</div>`;
+        } else if(pr.status==='partial') {
+          catchupHtml = `<div class="progress-note">→ 残りは今週中に補完推奨</div>`;
+        }
+      }
+      const fromLabels = rescheduleMap[d.date];
+      const rescheduleHtml = fromLabels ? `<div class="progress-note" style="color:var(--red-text)">+振替: ${fromLabels.join('・')} 分を追加</div>` : '';
       return `<div class="day-row${isToday ? ' today' : ''}">
         <div class="day-label">${d.label}</div>
         <div class="day-content">
@@ -1114,6 +1333,8 @@ phases.forEach(p => {
           </div>
           <span style="color:var(--text2)">${d.detail}</span>
           ${pr && pr.note ? `<div class="progress-note">記録: ${pr.note}</div>` : ''}
+          ${catchupHtml}
+          ${rescheduleHtml}
         </div>
       </div>`;
     }).join('');
