@@ -90,7 +90,7 @@
   <p class="footer">チェック状態はこの端末のブラウザに保存されます（localStorage）。学習計画.md（3nen-notesリポジトリ）が更新されたら、このページも合わせて更新してください。</p>
 </div>
 
-<script src="pomodoro_checks.js" onerror="window.POMODORO_CHECKS=window.POMODORO_CHECKS||{}"></script>
+<script src="pomodoro_daily.js" onerror="window.POMODORO_DAILY=window.POMODORO_DAILY||{}"></script>
 <script>
 const DOW = ['日','月','火','水','木','金','土'];
 
@@ -128,20 +128,17 @@ const THEME_KEY = 'studyCalendarTheme';
 function loadChecks(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; } }
 function saveChecks(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
 
-// ポモドーロタイマー(pomodoro_timer.py)が作業完了時に書き出す pomodoro_checks.js を取り込む。
-// 既にチェック済みのものへの上書き・手動アンチェックの巻き戻しは行わない（trueの追加のみ）。
-function mergePomodoroChecks(){
-  const src = window.POMODORO_CHECKS;
-  if(!src || typeof src !== 'object') return;
-  const checks = loadChecks();
-  let changed = false;
-  Object.keys(src).forEach(key=>{
-    if(src[key] && !checks[key]){
-      checks[key] = true;
-      changed = true;
-    }
-  });
-  if(changed) saveChecks(checks);
+// ポモドーロタイマー(pomodoro_timer.py)が書き出す pomodoro_daily.js（日付ごとの実績作業秒数）を表示用に使う。
+function getPomodoroSeconds(dateStr){
+  const src = window.POMODORO_DAILY;
+  if(!src || typeof src !== 'object') return 0;
+  return src[dateStr] || 0;
+}
+function formatHM(totalSeconds){
+  totalSeconds = Math.round(totalSeconds);
+  const h = Math.floor(totalSeconds/3600);
+  const m = Math.floor((totalSeconds%3600)/60);
+  return h+'h'+String(m).padStart(2,'0')+'m';
 }
 
 function todayStr(){
@@ -183,6 +180,10 @@ function buildCalendar(){
     let html = '<div class="cell-head"><span class="cell-date">7/'+day+'</span><span class="cell-dow">('+DOW[dow]+')</span></div>';
     if(info && info.exam){
       html += '<div class="exam-tag">試験: '+info.exam+'</div>';
+    }
+    const studiedSeconds = getPomodoroSeconds(dateStr);
+    if(studiedSeconds > 0){
+      html += '<div class="cell-progress" style="color:var(--accent-text2);font-weight:700;">⏱ 実績: '+formatHM(studiedSeconds)+'</div>';
     }
     if(info && info.tasks){
       html += '<ul class="task-list">';
@@ -284,7 +285,6 @@ themeBtn.addEventListener('click', ()=>{
 });
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 
-mergePomodoroChecks();
 buildCalendar();
 updateOverall();
 </script>
