@@ -80,6 +80,11 @@
     <button class="resetBtn" id="resetBtn">全チェックをリセット</button>
   </div>
 
+  <div class="overall" id="paceCard">
+    <div class="big" id="pacePct">±0%</div>
+    <div style="flex:1;min-width:160px;font-size:12px;color:var(--text2)" id="paceLabel">今日時点の予定と比較中...</div>
+  </div>
+
   <div class="grid" id="calGrid"></div>
 
   <p class="footer">チェック状態はこの端末のブラウザに保存されます（localStorage）。学習計画.md（3nen-notesリポジトリ）が更新されたら、このページも合わせて更新してください。</p>
@@ -193,17 +198,53 @@ function buildCalendar(){
 
 function updateOverall(){
   const checks = loadChecks();
+  const today = todayStr();
   let total = 0, done = 0;
-  Object.keys(PLAN).forEach(date=>{
+  let expectedByToday = 0, doneByToday = 0;
+  Object.keys(PLAN).sort().forEach(date=>{
     PLAN[date].tasks.forEach((t, idx)=>{
       total++;
-      if(checks[date+'_'+idx]) done++;
+      const isDone = !!checks[date+'_'+idx];
+      if(isDone) done++;
+      if(date <= today){
+        expectedByToday++;
+        if(isDone) doneByToday++;
+      }
     });
   });
   const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('overallPct').textContent = pct+'%';
   document.getElementById('overallBar').style.width = pct+'%';
   document.getElementById('overallCount').textContent = done+' / '+total+' 完了';
+
+  const paceEl = document.getElementById('pacePct');
+  const paceLabelEl = document.getElementById('paceLabel');
+  const paceCard = document.getElementById('paceCard');
+  if(today < '2026-07-01'){
+    paceEl.textContent = '—';
+    paceLabelEl.textContent = 'まだ計画期間前です（開始日: 7/1）';
+    paceCard.style.borderLeft = '';
+  } else if(expectedByToday === 0){
+    paceEl.textContent = '—';
+    paceLabelEl.textContent = '比較対象の予定がありません';
+  } else {
+    const deltaPct = Math.round((doneByToday - expectedByToday) / total * 100);
+    const sign = deltaPct > 0 ? '+' : (deltaPct < 0 ? '' : '±');
+    paceEl.textContent = sign + deltaPct + '%';
+    if(deltaPct > 0){
+      paceEl.style.color = 'var(--green-text)';
+      paceCard.style.borderLeft = '4px solid var(--green-text)';
+      paceLabelEl.textContent = '予定より進んでいます（今日までの予定 '+expectedByToday+' 件中 '+doneByToday+' 件完了）';
+    } else if(deltaPct < 0){
+      paceEl.style.color = 'var(--red-text)';
+      paceCard.style.borderLeft = '4px solid var(--red-text)';
+      paceLabelEl.textContent = '予定より遅れています（今日までの予定 '+expectedByToday+' 件中 '+doneByToday+' 件完了）';
+    } else {
+      paceEl.style.color = 'var(--text)';
+      paceCard.style.borderLeft = '';
+      paceLabelEl.textContent = '予定通りのペースです（今日までの予定 '+expectedByToday+' 件中 '+doneByToday+' 件完了）';
+    }
+  }
 }
 
 document.getElementById('resetBtn').addEventListener('click', ()=>{
