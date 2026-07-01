@@ -61,6 +61,30 @@
     .cell-date{font-size:15px;}
   }
   .footer{font-size:11px;color:var(--text3);text-align:center;margin-top:2rem;}
+
+  .timer-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:1rem;}
+  .timer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;}
+  .timer-title{font-size:13px;font-weight:700;color:var(--text2);}
+  .timer-toggle-view{font-family:'DM Mono',ui-monospace,monospace;font-size:10px;color:var(--accent-text2);cursor:pointer;background:none;border:none;padding:0;}
+  .timer-body{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .timer-mode-time{text-align:center;flex-shrink:0;}
+  .timer-mode-label{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:2px;}
+  .timer-time{font-family:'DM Mono',ui-monospace,monospace;font-size:36px;font-weight:700;color:var(--red-text);line-height:1;}
+  .timer-time.break{color:var(--green-text);}
+  .timer-controls{display:flex;flex-direction:column;gap:6px;flex:1;min-width:180px;}
+  .timer-switch-btn{font-family:'DM Mono',ui-monospace,monospace;font-size:13px;font-weight:700;padding:9px;border-radius:8px;border:none;background:#3b82f6;color:#fff;cursor:pointer;}
+  .timer-btn-row{display:flex;gap:6px;}
+  .timer-btn-row button{flex:1;font-family:'DM Mono',ui-monospace,monospace;font-size:11px;font-weight:700;padding:8px;border-radius:6px;border:none;cursor:pointer;color:#fff;}
+  .timer-btn-start{background:#4caf50;}
+  .timer-btn-pause{background:#ff9800;}
+  .timer-btn-reset{background:#f44336;}
+  .timer-today{font-family:'DM Mono',ui-monospace,monospace;font-size:11px;color:var(--text3);margin-top:8px;}
+  .timer-settings{display:none;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);align-items:flex-end;}
+  .timer-settings.open{display:flex;}
+  .timer-settings .field{flex:1;}
+  .timer-settings label{font-size:10px;color:var(--text3);display:block;margin-bottom:3px;}
+  .timer-settings input{width:100%;font-family:'DM Mono',ui-monospace,monospace;font-size:12px;padding:5px 8px;border-radius:5px;border:1px solid var(--border-hi);background:var(--bg);color:var(--text);}
+  .timer-settings button{font-family:'DM Mono',ui-monospace,monospace;font-size:11px;font-weight:700;padding:6px 10px;border-radius:5px;border:none;background:var(--surface2);color:var(--text2);cursor:pointer;}
 </style>
 </head>
 <body>
@@ -73,7 +97,32 @@
     <button id="themeToggle">🌙 Dark</button>
   </div>
 
-  <a href="timer.html" style="display:inline-block;font-size:12px;color:var(--accent-text2);margin-bottom:1rem;text-decoration:none;">⏱ ポモドーロタイマー（スマホ版）を開く →</a>
+  <div class="timer-card">
+    <div class="timer-head">
+      <span class="timer-title">⏱ ポモドーロタイマー</span>
+      <button class="timer-toggle-view" id="timerSettingsToggle">設定</button>
+    </div>
+    <div class="timer-body">
+      <div class="timer-mode-time">
+        <div class="timer-mode-label" id="timerModeLabel">作業中</div>
+        <div class="timer-time" id="timerTimeDisplay">25:00</div>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-switch-btn" id="timerSwitchBtn">⇄ 休憩に切り替える</button>
+        <div class="timer-btn-row">
+          <button class="timer-btn-start" id="timerStartBtn">開始</button>
+          <button class="timer-btn-pause" id="timerPauseBtn">一時停止</button>
+          <button class="timer-btn-reset" id="timerResetBtn">リセット</button>
+        </div>
+      </div>
+    </div>
+    <div class="timer-today" id="timerTodayTotal">今日の実績: 0h00m</div>
+    <div class="timer-settings" id="timerSettingsPanel">
+      <div class="field"><label>作業(分)</label><input type="number" id="timerWorkMin" value="25" min="1"></div>
+      <div class="field"><label>休憩(分)</label><input type="number" id="timerBreakMin" value="5" min="1"></div>
+      <button id="timerApplySettings">反映</button>
+    </div>
+  </div>
 
   <div class="overall">
     <div class="big" id="overallPct">0%</div>
@@ -293,6 +342,101 @@ themeBtn.addEventListener('click', ()=>{
   applyTheme(next);
 });
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+
+// ---------- 埋め込みポモドーロタイマー ----------
+(function(){
+  const TIMER_SETTINGS_KEY = 'phoneTimerSettings_v1';
+  let workMinutes = 25, breakMinutes = 5;
+  let isWorkMode = true;
+  let remainingSeconds = workMinutes * 60;
+  let isRunning = false;
+  let intervalId = null;
+
+  function loadDaily(){ try{ return JSON.parse(localStorage.getItem(PHONE_TIMER_DAILY_KEY)) || {}; }catch(e){ return {}; } }
+  function saveDaily(obj){ localStorage.setItem(PHONE_TIMER_DAILY_KEY, JSON.stringify(obj)); }
+  function loadSettings(){
+    try{
+      const s = JSON.parse(localStorage.getItem(TIMER_SETTINGS_KEY));
+      if(s){ workMinutes = s.workMinutes || 25; breakMinutes = s.breakMinutes || 5; }
+    }catch(e){}
+  }
+  function saveSettings(){ localStorage.setItem(TIMER_SETTINGS_KEY, JSON.stringify({workMinutes, breakMinutes})); }
+
+  function formatMMSS(seconds){
+    const sign = seconds < 0 ? '-' : '';
+    seconds = Math.abs(seconds);
+    const m = Math.floor(seconds/60), s = seconds%60;
+    return sign + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+
+  function refreshTimerUI(){
+    const timeEl = document.getElementById('timerTimeDisplay');
+    timeEl.textContent = formatMMSS(remainingSeconds);
+    timeEl.classList.toggle('break', !isWorkMode);
+    document.getElementById('timerModeLabel').textContent = isWorkMode ? '作業中' : '休憩中';
+    document.getElementById('timerSwitchBtn').textContent = isWorkMode ? '⇄ 休憩に切り替える' : '⇄ 作業に切り替える';
+    const daily = loadDaily();
+    document.getElementById('timerTodayTotal').textContent = '今日の実績: ' + formatHM(daily[todayStr()] || 0);
+  }
+
+  function tick(){
+    remainingSeconds -= 1;
+    if(isWorkMode){
+      const daily = loadDaily();
+      const today = todayStr();
+      daily[today] = (daily[today] || 0) + 1;
+      saveDaily(daily);
+    }
+    if(!isWorkMode && remainingSeconds === -1 && navigator.vibrate){
+      navigator.vibrate([200,100,200]);
+    }
+    refreshTimerUI();
+    buildCalendar();
+    updateOverall();
+  }
+
+  document.getElementById('timerStartBtn').addEventListener('click', ()=>{
+    if(isRunning) return;
+    isRunning = true;
+    intervalId = setInterval(tick, 1000);
+  });
+  document.getElementById('timerPauseBtn').addEventListener('click', ()=>{
+    isRunning = false;
+    clearInterval(intervalId);
+  });
+  document.getElementById('timerResetBtn').addEventListener('click', ()=>{
+    isRunning = false;
+    clearInterval(intervalId);
+    remainingSeconds = (isWorkMode ? workMinutes : breakMinutes) * 60;
+    refreshTimerUI();
+  });
+  document.getElementById('timerSwitchBtn').addEventListener('click', ()=>{
+    isWorkMode = !isWorkMode;
+    remainingSeconds = (isWorkMode ? workMinutes : breakMinutes) * 60;
+    refreshTimerUI();
+  });
+  document.getElementById('timerSettingsToggle').addEventListener('click', ()=>{
+    document.getElementById('timerSettingsPanel').classList.toggle('open');
+  });
+  document.getElementById('timerApplySettings').addEventListener('click', ()=>{
+    const w = parseInt(document.getElementById('timerWorkMin').value, 10);
+    const b = parseInt(document.getElementById('timerBreakMin').value, 10);
+    if(w > 0 && b > 0){
+      workMinutes = w; breakMinutes = b;
+      saveSettings();
+      if(!isRunning){
+        remainingSeconds = (isWorkMode ? workMinutes : breakMinutes) * 60;
+        refreshTimerUI();
+      }
+    }
+  });
+
+  loadSettings();
+  document.getElementById('timerWorkMin').value = workMinutes;
+  document.getElementById('timerBreakMin').value = breakMinutes;
+  remainingSeconds = workMinutes * 60;
+  refreshTimerUI();
+})();
 
 buildCalendar();
 updateOverall();
