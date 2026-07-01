@@ -1,0 +1,1 @@
+window.POMODORO_CHECKS = {};
