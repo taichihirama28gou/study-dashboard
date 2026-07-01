@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学習計画カレンダー（7月）</title>
+<style>
+  :root {
+    --bg:#f3f1ea;--bg2:#ffffff;--surface:#f8f6f1;--surface2:#eeeae0;
+    --border:#e5e1d6;--border-hi:#ccc8bc;
+    --text:#1c1a17;--text2:#6b6762;--text3:#a09a90;
+    --accent-bg:#eff6ff;--accent-text:#1d4ed8;--accent-text2:#3b82f6;
+    --red-bg:#fff1f2;--red-text:#9f1239;
+    --green-bg:#f0fdf4;--green-text:#166534;
+  }
+  body.dark{
+    --bg:#080c10;--bg2:#0d1117;--surface:#161b22;--surface2:#1c2128;
+    --border:#21262d;--border-hi:#30363d;
+    --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+    --accent-bg:rgba(0,230,118,.1);--accent-text:#00e676;--accent-text2:#3fb950;
+    --red-bg:rgba(248,81,73,.12);--red-text:#f85149;
+    --green-bg:rgba(63,185,80,.12);--green-text:#3fb950;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:'DM Sans','Hiragino Sans','Yu Gothic',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:1.5rem 1rem 3rem;line-height:1.6;transition:background .25s,color .25s;}
+  .wrap{max-width:980px;margin:0 auto;}
+  .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;gap:12px;}
+  h1{font-size:20px;font-weight:700;margin:0 0 3px;letter-spacing:-.02em;}
+  .subtitle{color:var(--text3);font-size:12px;margin:0;}
+  #themeToggle{font-family:'DM Mono',ui-monospace,monospace;font-size:11px;font-weight:500;padding:5px 12px;border-radius:20px;border:1px solid var(--border-hi);background:var(--bg2);color:var(--text2);cursor:pointer;flex-shrink:0;}
+  #themeToggle:hover{border-color:var(--text2);color:var(--text);}
+  .overall{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .overall .big{font-family:'DM Mono',ui-monospace,monospace;font-size:22px;font-weight:700;color:var(--accent-text);}
+  .overall .bar-wrap{flex:1;min-width:160px;background:var(--surface);border-radius:5px;height:8px;overflow:hidden;}
+  .overall .bar-fill{height:8px;background:var(--accent-text2);border-radius:5px;transition:width .4s;}
+  .resetBtn{font-family:'DM Mono',ui-monospace,monospace;font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border-hi);background:transparent;color:var(--text3);cursor:pointer;}
+  .resetBtn:hover{background:var(--red-bg);color:var(--red-text);border-color:rgba(225,29,72,.3);}
+
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .dow{font-family:'DM Mono',ui-monospace,monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;text-align:center;padding-bottom:2px;}
+  .cell{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.55rem .6rem;min-height:150px;display:flex;flex-direction:column;gap:6px;}
+  .cell.empty{background:transparent;border:1px dashed var(--border);opacity:.35;min-height:60px;}
+  .cell.today{border-color:var(--accent-text2);box-shadow:0 0 0 2px var(--accent-bg);}
+  .cell.exam{border-left:3px solid var(--red-text);}
+  .cell.done-full{opacity:.55;}
+  .cell-head{display:flex;justify-content:space-between;align-items:baseline;}
+  .cell-date{font-family:'DM Mono',ui-monospace,monospace;font-size:13px;font-weight:700;}
+  .cell-dow{font-size:10px;color:var(--text3);}
+  .exam-tag{font-family:'DM Mono',ui-monospace,monospace;font-size:9px;font-weight:700;background:var(--red-bg);color:var(--red-text);border-radius:4px;padding:1px 5px;display:inline-block;margin-top:2px;}
+  .task-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;flex:1;}
+  .task-list li{display:flex;align-items:flex-start;gap:5px;font-size:11.5px;color:var(--text2);}
+  .task-list li input{margin-top:2px;flex-shrink:0;cursor:pointer;accent-color:var(--accent-text2);}
+  .task-list li.checked span{text-decoration:line-through;color:var(--text3);}
+  .cell-progress{font-family:'DM Mono',ui-monospace,monospace;font-size:9px;color:var(--text3);margin-top:auto;padding-top:4px;}
+
+  @media (max-width:760px){
+    .grid{grid-template-columns:1fr;}
+    .dow{display:none;}
+    .cell.empty{display:none;}
+    .cell{min-height:0;}
+    .cell-date{font-size:15px;}
+  }
+  .footer{font-size:11px;color:var(--text3);text-align:center;margin-top:2rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="page-header">
+    <div>
+      <h1>期末テスト 学習計画カレンダー</h1>
+      <p class="subtitle">2026年7月 / フェーズA・B（ローテーション版）〜試験期間</p>
+    </div>
+    <button id="themeToggle">🌙 Dark</button>
+  </div>
+
+  <div class="overall">
+    <div class="big" id="overallPct">0%</div>
+    <div class="bar-wrap"><div class="bar-fill" id="overallBar" style="width:0%"></div></div>
+    <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)" id="overallCount">0 / 0 完了</div>
+    <button class="resetBtn" id="resetBtn">全チェックをリセット</button>
+  </div>
+
+  <div class="grid" id="calGrid"></div>
+
+  <p class="footer">チェック状態はこの端末のブラウザに保存されます（localStorage）。学習計画.md（3nen-notesリポジトリ）が更新されたら、このページも合わせて更新してください。</p>
+</div>
+
+<script>
+const DOW = ['日','月','火','水','木','金','土'];
+
+// 2026年7月 学習計画（フェーズA/B ローテーション版 + 試験期間）
+const PLAN = {
+  '2026-07-01': { tasks:['電子回路Ⅱ問題集①(2.5h)','制御の基礎 問題演習開始(1.5h)'] },
+  '2026-07-02': { tasks:['電子回路Ⅱ問題集②(1.5h)','音響工学ノート(1.5h)','電子デバイス ノート概観(1h)'] },
+  '2026-07-03': { tasks:['電子回路Ⅱ問題集③(2h)','電気機器Ⅱ ノート概観(1h)'] },
+  '2026-07-04': { tasks:['音響工学ノート(2h)','制御の基礎 問題演習(1.5h)','電子回路Ⅱ苦手見直し(1h)','オプトロニクス ノート概観(1h)'] },
+  '2026-07-05': { tasks:['音響工学 問題集に着手(2h)','電子回路Ⅱ問題集を一通り確認(1h)','制御の基礎 問題演習(1.5h)','電子デバイス ノート続き(1h)'] },
+  '2026-07-06': { tasks:['音響工学問題集(1.5h)','制御の基礎 問題演習(1.5h)'] },
+  '2026-07-07': { tasks:['電子回路Ⅱ最終仕上げ(1h)','音響工学問題集(1.5h)','電気機器Ⅱ ノート続き(1h)'] },
+  '2026-07-08': { tasks:['電子回路Ⅱ最終確認(0.5h)','音響工学問題集(1.5h)','制御の基礎 問題演習(1.5h)'] },
+  '2026-07-09': { tasks:['音響工学問題集(2h)','電子デバイス ノート概観完了(1.5h)'] },
+  '2026-07-10': { tasks:['音響工学問題集(1.5h)','オプトロニクス ノート概観完了(1h)'] },
+  '2026-07-11': { tasks:['音響工学問題集メイン(2.5h)','制御の基礎 問題演習(2h)','電気機器Ⅱ ノート概観完了(1.5h)'] },
+  '2026-07-12': { tasks:['音響工学苦手分野総点検(2h)','電子デバイス・電気機器Ⅱ 軽い演習にトライ(各1h)','オプトロニクス ノート仕上げ(1h)'] },
+  '2026-07-13': { tasks:['電子回路Ⅱ最終確認・問題集通し(3-4h)','英語特殊A対策開始(夜1h)'] },
+  '2026-07-14': { exam:'電子回路Ⅱ 10:50-12:30', tasks:['試験後 音響工学へシフト(2-3h)','英語特殊A最終確認(夜1h)'] },
+  '2026-07-15': { exam:'英語特殊A 10:50-12:30', tasks:['試験後 音響工学集中(3-4h)'] },
+  '2026-07-16': { tasks:['音響工学集中・試験形式で再確認(4h)'] },
+  '2026-07-17': { exam:'音響工学 10:50-12:30', tasks:['試験後 制御の基礎ノート総復習(2h)'] },
+  '2026-07-18': { tasks:['制御の基礎 問題集を解けるだけ解く(5-6h)'] },
+  '2026-07-19': { tasks:['制御の基礎 問題集続き+苦手分野の洗い出し(5-6h)'] },
+  '2026-07-20': { tasks:['制御の基礎 最終確認・通し演習(4-5h)'] },
+  '2026-07-21': { exam:'制御の基礎 13:20-15:00', tasks:['試験後 電子デバイス・電気機器Ⅱ集中対策(3h)'] },
+  '2026-07-22': { tasks:['電子デバイス・電気機器Ⅱ集中対策、終日(6-7h)'] },
+  '2026-07-23': { exam:'電子デバイス 10:50-12:30 / 電気機器Ⅱ 13:20-15:00', tasks:['試験後 オプトロニクスへ全振り(4-5h)'] },
+  '2026-07-24': { exam:'オプトロニクス 09:00-10:40', tasks:['前日夜〜当日朝の追い込みで終了'] },
+};
+
+const STORAGE_KEY = 'studyCalendarChecks_v1';
+const THEME_KEY = 'studyCalendarTheme';
+
+function loadChecks(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; } }
+function saveChecks(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function buildCalendar(){
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  DOW.forEach(d=>{
+    const el = document.createElement('div');
+    el.className = 'dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const first = new Date(2026,6,1); // July = index 6
+  const startPad = first.getDay(); // 0=Sun
+  const daysInMonth = 31;
+  const today = todayStr();
+  const checks = loadChecks();
+
+  for(let i=0;i<startPad;i++){
+    const el = document.createElement('div');
+    el.className = 'cell empty';
+    grid.appendChild(el);
+  }
+
+  for(let day=1; day<=daysInMonth; day++){
+    const dateStr = '2026-07-'+String(day).padStart(2,'0');
+    const info = PLAN[dateStr];
+    const dow = new Date(2026,6,day).getDay();
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    if(dateStr === today) cell.classList.add('today');
+    if(info && info.exam) cell.classList.add('exam');
+
+    let html = '<div class="cell-head"><span class="cell-date">7/'+day+'</span><span class="cell-dow">('+DOW[dow]+')</span></div>';
+    if(info && info.exam){
+      html += '<div class="exam-tag">試験: '+info.exam+'</div>';
+    }
+    if(info && info.tasks){
+      html += '<ul class="task-list">';
+      info.tasks.forEach((t, idx)=>{
+        const key = dateStr+'_'+idx;
+        const isChecked = !!checks[key];
+        html += '<li class="'+(isChecked?'checked':'')+'"><input type="checkbox" data-key="'+key+'" '+(isChecked?'checked':'')+'><span>'+t+'</span></li>';
+      });
+      html += '</ul>';
+      const done = info.tasks.filter((t,idx)=>checks[dateStr+'_'+idx]).length;
+      html += '<div class="cell-progress">'+done+' / '+info.tasks.length+' 完了</div>';
+      if(done === info.tasks.length) cell.classList.add('done-full');
+    } else if(!info){
+      html += '<div class="cell-progress">計画対象外</div>';
+    }
+    cell.innerHTML = html;
+    grid.appendChild(cell);
+  }
+
+  grid.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const checks = loadChecks();
+      checks[cb.dataset.key] = cb.checked;
+      saveChecks(checks);
+      buildCalendar();
+      updateOverall();
+    });
+  });
+}
+
+function updateOverall(){
+  const checks = loadChecks();
+  let total = 0, done = 0;
+  Object.keys(PLAN).forEach(date=>{
+    PLAN[date].tasks.forEach((t, idx)=>{
+      total++;
+      if(checks[date+'_'+idx]) done++;
+    });
+  });
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('overallPct').textContent = pct+'%';
+  document.getElementById('overallBar').style.width = pct+'%';
+  document.getElementById('overallCount').textContent = done+' / '+total+' 完了';
+}
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('全てのチェックをリセットしますか？')){
+    localStorage.removeItem(STORAGE_KEY);
+    buildCalendar();
+    updateOverall();
+  }
+});
+
+const themeBtn = document.getElementById('themeToggle');
+function applyTheme(t){
+  document.body.classList.toggle('dark', t === 'dark');
+  themeBtn.textContent = t === 'dark' ? '☀️ Light' : '🌙 Dark';
+}
+themeBtn.addEventListener('click', ()=>{
+  const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+
+buildCalendar();
+updateOverall();
+</script>
+</body>
+</html>
