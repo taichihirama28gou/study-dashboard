@@ -142,6 +142,33 @@
 </div>
 
 <script src="pomodoro_daily.js" onerror="window.POMODORO_DAILY=window.POMODORO_DAILY||{}"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+// PC(pomodoro_timer.py)とスマホ(このページの埋め込みタイマー)の作業時間を
+// Firebase Realtime Database経由で本当に同期する。日付ごとの累計秒数を /pomodoroDaily に保存。
+const firebaseConfig = {
+  apiKey: "AIzaSyBw-qQgwBNPNtyaz3vGXTxGkoY6pjJCHbk",
+  authDomain: "study-timer-2d91b.firebaseapp.com",
+  databaseURL: "https://study-timer-2d91b-default-rtdb.firebaseio.com",
+  projectId: "study-timer-2d91b",
+  storageBucket: "study-timer-2d91b.firebasestorage.app",
+  messagingSenderId: "669939176740",
+  appId: "1:669939176740:web:8490ab9f1856b598018fb1",
+  measurementId: "G-3HVN8XV24L"
+};
+window.CLOUD_DAILY = {};
+try{
+  firebase.initializeApp(firebaseConfig);
+  window.firebaseDailyRef = firebase.database().ref('pomodoroDaily');
+  window.firebaseDailyRef.on('value', function(snap){
+    window.CLOUD_DAILY = snap.val() || {};
+    if(typeof buildCalendar === 'function'){ buildCalendar(); updateOverall(); }
+  });
+}catch(e){
+  console.warn('Firebase初期化に失敗しました。クラウド同期は無効です。', e);
+}
+</script>
 <script>
 const DOW = ['日','月','火','水','木','金','土'];
 
@@ -179,18 +206,23 @@ const THEME_KEY = 'studyCalendarTheme';
 function loadChecks(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; } }
 function saveChecks(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
 
-// ポモドーロタイマー(pomodoro_timer.py、PC版)が書き出す pomodoro_daily.js（日付ごとの実績作業秒数）と、
-// timer.html（スマホ版、同じGitHub Pagesサイト内でlocalStorageを共有）の記録を合算して表示する。
+// 実績時間 = Firebase(PC・スマホ共通のクラウド記録)にその日のデータがあればそれを正として使う。
+// クラウドにまだ何もない場合（オフライン時・Firebase移行前の記録）だけ、旧ローカル記録にフォールバックする。
+// ※ cloud優先＋ローカルはフォールバックのみにすることで、PC/スマホの二重加算を防いでいる。
 const PHONE_TIMER_DAILY_KEY = 'phoneTimerDaily_v1';
 function getPomodoroSeconds(dateStr){
+  const cloud = window.CLOUD_DAILY || {};
+  if(Object.prototype.hasOwnProperty.call(cloud, dateStr)){
+    return cloud[dateStr] || 0;
+  }
   const src = window.POMODORO_DAILY;
-  const pcSeconds = (src && typeof src === 'object') ? (src[dateStr] || 0) : 0;
-  let phoneSeconds = 0;
+  const legacyPcSeconds = (src && typeof src === 'object') ? (src[dateStr] || 0) : 0;
+  let legacyPhoneSeconds = 0;
   try{
     const phoneDaily = JSON.parse(localStorage.getItem(PHONE_TIMER_DAILY_KEY)) || {};
-    phoneSeconds = phoneDaily[dateStr] || 0;
+    legacyPhoneSeconds = phoneDaily[dateStr] || 0;
   }catch(e){}
-  return pcSeconds + phoneSeconds;
+  return legacyPcSeconds + legacyPhoneSeconds;
 }
 function formatHM(totalSeconds){
   totalSeconds = Math.round(totalSeconds);
@@ -352,8 +384,6 @@ applyTheme(localStorage.getItem(THEME_KEY) || 'light');
   let isRunning = false;
   let intervalId = null;
 
-  function loadDaily(){ try{ return JSON.parse(localStorage.getItem(PHONE_TIMER_DAILY_KEY)) || {}; }catch(e){ return {}; } }
-  function saveDaily(obj){ localStorage.setItem(PHONE_TIMER_DAILY_KEY, JSON.stringify(obj)); }
   function loadSettings(){
     try{
       const s = JSON.parse(localStorage.getItem(TIMER_SETTINGS_KEY));
@@ -375,17 +405,29 @@ applyTheme(localStorage.getItem(THEME_KEY) || 'light');
     timeEl.classList.toggle('break', !isWorkMode);
     document.getElementById('timerModeLabel').textContent = isWorkMode ? '作業中' : '休憩中';
     document.getElementById('timerSwitchBtn').textContent = isWorkMode ? '⇄ 休憩に切り替える' : '⇄ 作業に切り替える';
-    const daily = loadDaily();
-    document.getElementById('timerTodayTotal').textContent = '今日の実績: ' + formatHM(daily[todayStr()] || 0);
+    document.getElementById('timerTodayTotal').textContent = '今日の実績: ' + formatHM(getPomodoroSeconds(todayStr()));
+  }
+
+  // Firebase RTDBへの書き込みをまとめて送るためのバッファ（1秒ごとに書くと通信量が多いため）
+  let pendingSeconds = 0;
+  let flushTimerId = null;
+  function flushPending(){
+    if(pendingSeconds <= 0 || !window.firebaseDailyRef) return;
+    const today = todayStr();
+    const updates = {};
+    updates[today] = firebase.database.ServerValue.increment(pendingSeconds);
+    window.firebaseDailyRef.update(updates).catch(e=>console.warn('Firebase同期失敗', e));
+    pendingSeconds = 0;
   }
 
   function tick(){
     remainingSeconds -= 1;
     if(isWorkMode){
-      const daily = loadDaily();
+      pendingSeconds += 1;
+      // Firebaseへの書き込み(5秒ごと)が反映されるまでの間、表示だけ即時に進めておく（楽観的更新）
       const today = todayStr();
-      daily[today] = (daily[today] || 0) + 1;
-      saveDaily(daily);
+      window.CLOUD_DAILY = window.CLOUD_DAILY || {};
+      window.CLOUD_DAILY[today] = (window.CLOUD_DAILY[today] || 0) + 1;
     }
     if(!isWorkMode && remainingSeconds === -1 && navigator.vibrate){
       navigator.vibrate([200,100,200]);
@@ -394,6 +436,10 @@ applyTheme(localStorage.getItem(THEME_KEY) || 'light');
     buildCalendar();
     updateOverall();
   }
+
+  // 5秒ごとにまとめてFirebaseへ送信
+  flushTimerId = setInterval(flushPending, 5000);
+  window.addEventListener('beforeunload', flushPending);
 
   document.getElementById('timerStartBtn').addEventListener('click', ()=>{
     if(isRunning) return;
